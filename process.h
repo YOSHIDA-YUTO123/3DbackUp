@@ -1,0 +1,96 @@
+//===================================================
+//
+// プロセス [process.h]
+// Author:YUTO YOSHIDA
+//
+//===================================================
+
+//***************************************************
+// 多重インクルード防止
+//***************************************************
+#ifndef _PROCESS_H_
+#define _PROCESS_H_
+
+//***************************************************
+// インクルードファイル
+//***************************************************
+#include"main.h"
+
+// 範囲内に収める
+template <class T> T Clamp(const T value, const T min, const T max)
+{
+	if (value < min) return min;
+
+	if (value > max) return max;
+
+	return value;
+};
+
+// 範囲内にをループする
+template <class T> T Wrap(const T value, const T min, const T max)
+{
+	if (value < min) return max;
+
+	if (value > max) return min;
+
+	return value;
+};
+
+// 角度を正規化する
+template <class T> T NormalizeRot(T* value)
+{
+	if ((*value) < -D3DX_PI)
+	{
+		(*value) += D3DX_PI * 2.0f;
+	}
+	else if ((*value) >D3DX_PI)
+	{
+		(*value) += -D3DX_PI * 2.0f;
+	}
+
+	return (*value);
+};
+
+// 目的の角度までの距離を求め正規化する
+template <class T> T NormalizeDiffRot(const T Diff, T* value)
+{
+	if (Diff <= -D3DX_PI)
+	{
+		(*value) += -D3DX_PI * 2.0f;
+	}
+	else if (Diff >= D3DX_PI)
+	{
+		(*value) += D3DX_PI * 2.0f;
+	}
+
+	return *value;
+};
+
+// 目的の値までの補間
+template <class T> T LerpDest(const T dest,const T value,const float coef)
+{
+	T out = value + (dest - value) * coef;
+
+	return out;
+};
+
+// 目的の値までの補間
+template <class T> T LerpDiff(const T offset, const T Diff, const float fRate)
+{
+	T out = offset + (Diff * fRate);
+
+	return out;
+};
+
+// 
+template <class T> bool IsInRange(const T value,const T min,const T max)
+{
+	if (value >= min && value <= max)
+	{
+		return true;
+	}
+
+	return false;
+};
+
+#endif
