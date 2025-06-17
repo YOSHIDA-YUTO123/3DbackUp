@@ -2,9 +2,6 @@ c:\users\student\source\repos\c++directx3d001\debug\c++directx3d001.pch
 c:\users\student\source\repos\c++directx3d001\debug\vc142.pdb
 c:\users\student\source\repos\c++directx3d001\debug\vc142.idb
 c:\users\student\source\repos\c++directx3d001\debug\pch.obj
-c:\users\student\source\repos\c++directx3d001\debug\object3d.obj
-c:\users\student\source\repos\c++directx3d001\debug\object2d.obj
-c:\users\student\source\repos\c++directx3d001\debug\object.obj
 c:\users\student\source\repos\c++directx3d001\debug\number.obj
 c:\users\student\source\repos\c++directx3d001\debug\motion.obj
 c:\users\student\source\repos\c++directx3d001\debug\modelmanager.obj
@@ -18,10 +15,13 @@ c:\users\student\source\repos\c++directx3d001\debug\effect.obj
 c:\users\student\source\repos\c++directx3d001\debug\debugproc.obj
 c:\users\student\source\repos\c++directx3d001\debug\meshfield.obj
 c:\users\student\source\repos\c++directx3d001\debug\mesh.obj
+c:\users\student\source\repos\c++directx3d001\debug\impact.obj
+c:\users\student\source\repos\c++directx3d001\debug\dome.obj
 c:\users\student\source\repos\c++directx3d001\debug\character3d.obj
 c:\users\student\source\repos\c++directx3d001\debug\character2d.obj
 c:\users\student\source\repos\c++directx3d001\debug\camera.obj
 c:\users\student\source\repos\c++directx3d001\debug\billboard.obj
+c:\users\student\source\repos\c++directx3d001\debug\cylinder.obj
 c:\users\student\source\repos\c++directx3d001\debug\word.obj
 c:\users\student\source\repos\c++directx3d001\debug\texturemanager.obj
 c:\users\student\source\repos\c++directx3d001\debug\testword.obj
@@ -32,8 +32,11 @@ c:\users\student\source\repos\c++directx3d001\debug\process.obj
 c:\users\student\source\repos\c++directx3d001\debug\player.obj
 c:\users\student\source\repos\c++directx3d001\debug\particle.obj
 c:\users\student\source\repos\c++directx3d001\debug\objectx.obj
-c:\users\student\source\repos\c++directx3d001\c++directx3d001.exe
+c:\users\student\source\repos\c++directx3d001\debug\object3d.obj
+c:\users\student\source\repos\c++directx3d001\debug\object2d.obj
+c:\users\student\source\repos\c++directx3d001\debug\object.obj
 c:\users\student\source\repos\c++directx3d001\debug\c++directx3d001.ilk
+c:\users\student\source\repos\c++directx3d001\c++directx3d001.exe
 c:\users\student\source\repos\c++directx3d001\c++directx3d001.pdb
 c:\users\student\source\repos\c++directx3d001\debug\c++directx3d001.tlog\cl.command.1.tlog
 c:\users\student\source\repos\c++directx3d001\debug\c++directx3d001.tlog\cl.read.1.tlog

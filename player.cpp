@@ -50,7 +50,7 @@ CPlayer::~CPlayer()
 //===================================================
 HRESULT CPlayer::Init(void)
 {
-	m_pMotion = CMotion::Load("data/motion.txt", &m_apModel[0], NUM_PARTS, &m_nNumModel,MOTIONTYPE_MAX);
+	m_pMotion = CMotion::Load("data/MOTION/motionPlayer.txt", &m_apModel[0], NUM_PARTS, &m_nNumModel,MOTIONTYPE_MAX);
 
 	// ÉXÉRÉAÇÃê∂ê¨
 	m_pScore = (CScoreLerper*)CScore::Create(CScore::TYPE_LERPER,D3DXVECTOR3(1150.0f, 50.0f, 0.0f), 180.0f, 30.0f);

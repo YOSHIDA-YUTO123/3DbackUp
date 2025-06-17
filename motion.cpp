@@ -89,7 +89,10 @@ CMotion* CMotion::Load(const char* pLoadFileName, CModel** ppModel, const int nM
 			// モデルのロード処理
 			if (pMotion->LoadModel(ppModel, nMaxSize, nNumModel, input, line, pMotion))
 			{
-				nNumModel++;
+				if (nNumModel <= nMaxSize - 1)
+				{
+					nNumModel++;
+				}
 			}
 
 			// パーツの設定が終わって無かったら
@@ -158,7 +161,7 @@ bool CMotion::LoadModel(CModel** ppModel, const int nMaxSize, int nCnt, string I
 		const char* MODEL_NAME = modelName.c_str();
 
 		// サイズ以上に読み込むとエラーが出るため制限
-		if (nCnt < nMaxSize - 1)
+		if (nCnt <= nMaxSize - 1)
 		{
 			// モデルの生成
 			ppModel[nCnt] = CModel::Create(MODEL_NAME);
