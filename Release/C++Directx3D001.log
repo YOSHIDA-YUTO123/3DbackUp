@@ -1,34 +1,7 @@
-﻿  billboard.cpp
-  camera.cpp
-C:\Users\student\source\repos\C++Directx3D001\camera.cpp(88,11): warning C4189: 'pPlayer': ローカル変数が初期化されましたが、参照されていません
-  character.cpp
-  debugproc.cpp
-  effect.cpp
-  enemy.cpp
-  input.cpp
-  light.cpp
-  main.cpp
-C:\Users\student\source\repos\C++Directx3D001\main.cpp(24,91): warning C4100: 'lpCmdLine': 引数は関数の本体部で 1 度も参照されません。
-C:\Users\student\source\repos\C++Directx3D001\main.cpp(24,65): warning C4100: 'hInstancePrev': 引数は関数の本体部で 1 度も参照されません。
+﻿  enemy.cpp
   manager.cpp
-  model.cpp
-  modelManager.cpp
-  number.cpp
-  object.cpp
-  object2D.cpp
-  object3D.cpp
-  objectX.cpp
-  particle.cpp
-  player.cpp
-  renderer.cpp
-  コンパイル中...
-  score.cpp
-  sound.cpp
-  testword.cpp
-  textureManager.cpp
-  word.cpp
   コード生成しています。
-  Previous IPDB not found, fall back to full compilation.
-  All 292 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Previous IPDB and IOBJ mismatch, fall back to full compilation.
+  All 628 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
   コード生成が終了しました。
   C++Directx3D001.vcxproj -> C:\Users\student\source\repos\C++Directx3D001\C++Directx3D001.exe

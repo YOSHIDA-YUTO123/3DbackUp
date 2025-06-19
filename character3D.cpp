@@ -12,7 +12,7 @@
 #include "textureManager.h"
 #include"manager.h"
 #include"renderer.h"
-#include"process.h"
+#include"math.h"
 
 //===================================================
 // コンストラクタ

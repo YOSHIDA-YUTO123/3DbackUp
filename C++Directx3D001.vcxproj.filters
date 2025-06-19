@@ -147,7 +147,7 @@
     <ClCompile Include="motion.cpp">
       <Filter>ソース ファイル\base</Filter>
     </ClCompile>
-    <ClCompile Include="process.cpp">
+    <ClCompile Include="math.cpp">
       <Filter>ソース ファイル\system</Filter>
     </ClCompile>
     <ClCompile Include="player.cpp">
@@ -254,7 +254,7 @@
     <ClInclude Include="motion.h">
       <Filter>ヘッダー ファイル\base</Filter>
     </ClInclude>
-    <ClInclude Include="process.h">
+    <ClInclude Include="math.h">
       <Filter>ヘッダー ファイル\system</Filter>
     </ClInclude>
     <ClInclude Include="mesh.h">

@@ -149,9 +149,9 @@ void CMesh::Draw(void)
 }
 
 //================================================
-// •`‰æˆ—(ˆø”‚ ‚è)
+// •`‰æˆ—
 //================================================
-void CMesh::Draw(D3DPRIMITIVETYPE type, const int nNumvtx, const int nNumPolygon, const int nStartIdx, const int nMinVertex)
+void CMesh::SetUpDraw(void)
 {
 	// ƒfƒoƒCƒX‚ÌŽæ“¾
 	LPDIRECT3DDEVICE9 pDevice = CManager::GetRenderer()->GetDevice();
@@ -197,9 +197,6 @@ void CMesh::Draw(D3DPRIMITIVETYPE type, const int nNumvtx, const int nNumPolygon
 		pDevice->SetTexture(0, pTexture->GetAdress(m_nIdexTexture));
 
 	}
-
-	//ƒ|ƒŠƒSƒ“‚Ì•`‰æ
-	pDevice->DrawIndexedPrimitive(type, 0, 0, nNumvtx, nStartIdx, nNumPolygon);
 }
 
 //================================================

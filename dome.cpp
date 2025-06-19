@@ -17,7 +17,7 @@
 //================================================
 CMeshDome::CMeshDome()
 {
-	m_pIdxBuffMeshDome = nullptr;
+
 }
 
 //================================================
@@ -57,8 +57,12 @@ CMeshDome* CMeshDome::Create(const D3DXVECTOR3 pos, const int nSegX, const int n
 	if (pMesh == nullptr) return nullptr;
 
 	// 頂点数の設定
-	int nNumFanVtx = (nSegX + 1) + 1;
+	int nNumFanVtx = (nSegX) + 1;
 
+	// ポリゴン数の設定
+	int nNumFanPolygon = (nNumFanVtx) * 3;
+
+	int nNumIdxFan = nNumFanPolygon + 2;
 	// 頂点数の設定
 	int nNumDomeVtx = (nSegX + 1) * (nSegZ + 1);
 
@@ -71,8 +75,11 @@ CMeshDome* CMeshDome::Create(const D3DXVECTOR3 pos, const int nSegX, const int n
 	// 頂点情報の設定
 	int nNumVtx = nNumFanVtx + nNumDomeVtx;
 
+	int nNumIdx = nNumDomeIndex + nNumIdxFan;
+
 	// 頂点の設定
-	pMesh->SetVtxElement(nNumVtx, nNumDomePolygon, nNumDomeIndex);
+	pMesh->SetVtxElement(nNumVtx, nNumDomePolygon, nNumIdx);
+
 	pMesh->SetSegment(nSegX, nSegZ);
 	
 	// 初期化処理
@@ -108,11 +115,11 @@ HRESULT CMeshDome::Init(void)
 //================================================
 void CMeshDome::Uninit(void)
 {
-	if (m_pIdxBuffMeshDome != nullptr)
-	{
-		m_pIdxBuffMeshDome->Release();
-		m_pIdxBuffMeshDome = nullptr;
-	}
+	//if (m_pIdxBuffMeshDome != nullptr)
+	//{
+	//	m_pIdxBuffMeshDome->Release();
+	//	m_pIdxBuffMeshDome = nullptr;
+	//}
 
 	// 終了処理
 	CMesh::Uninit();
@@ -136,34 +143,30 @@ void CMeshDome::Draw(void)
 
 	pDevice->SetRenderState(D3DRS_CULLMODE, TRUE);
 
-	// 描画処理
-	CMesh::Draw();
-
-	//インデックスバッファをデータストリームに設定
-	pDevice->SetIndices(m_pIdxBuffMeshDome);
-
-	//テクスチャフォーマットの設定
-	pDevice->SetFVF(FVF_VERTEX_3D);
-
-	LPDIRECT3DTEXTURE9 pTexture = nullptr;
-
-	// テクスチャの取得
-	pDevice->GetTexture(0, (IDirect3DBaseTexture9**)&pTexture);
-
-	//テクスチャの設定
-	pDevice->SetTexture(0, pTexture);
-
 	int nSegX = GetSegX();
+	int nSegZ = GetSegZ();
 
 	// 頂点数の設定
-	int nNumFanVtx = (nSegX + 1) + 1;
+	int nNumFanVtx = nSegX + 1;
 
 	// ポリゴン数の設定
-	int nNumFanPolygon = (nNumFanVtx - 1) * 3;
+	int nNumFanPolygon = nNumFanVtx * 3;
+
+	// 頂点数の設定
+	int nNumDomeVtx = (nSegX + 1) * (nSegZ + 1);
+
+	// ポリゴン数の設定
+	int nNumDomePolygon = (((nSegX * nSegZ) * 2)) + (4 * (nSegZ - 1));
+
+	// 描画処理
+	CMesh::SetUpDraw();
 
 	//ポリゴンの描画
 	pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLEFAN, 0, 0, nNumFanVtx, 0, nNumFanPolygon);
-	
+
+	//ポリゴンの描画
+	pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLESTRIP, 0, 0, nNumDomeVtx, m_nOffsetIdx, nNumDomePolygon);
+
 	pDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_CCW);
 }
 
@@ -172,12 +175,9 @@ void CMeshDome::Draw(void)
 //================================================
 void CMeshDome::SetDome(const int nSegX, const int nSegZ, const float fRadius, const float fHeight)
 {
-	// デバイスの取得
-	LPDIRECT3DDEVICE9 pDevice = CManager::GetRenderer()->GetDevice();
-
 	int nCntVtx = 0;
-	float fTexX = 1.0f / (nSegX);
-	float fTexY = 1.0f / (nSegZ);
+	float fTexX = 0.5f / nSegX;
+	float fTexY = 0.5f / nSegZ;
 
 	float fNowRadius = fRadius / (nSegZ + 1);
 
@@ -200,8 +200,8 @@ void CMeshDome::SetDome(const int nSegX, const int nSegZ, const float fRadius, c
 		// 最後まで行ったら
 		if (nCntX == nSegX)
 		{
-			// 最後をつなげる
-			SetVtxBuffer(posOld, nCntVtx + 1, D3DXVECTOR2(fPosTexX, fPosTexY));
+			//// 最後をつなげる
+			//SetVtxBuffer(posOld, nCntVtx + 1, D3DXVECTOR2(fPosTexX, fPosTexY));
 		}
 
 		// 前回の計算を保存
@@ -215,42 +215,19 @@ void CMeshDome::SetDome(const int nSegX, const int nSegZ, const float fRadius, c
 	// ドームのてっぺんの位置の設定
 	SetVtxBuffer(D3DXVECTOR3(0.0f, fHeight + (fHeight / nSegZ + 1),0.0f), 0, D3DXVECTOR2(fTexX, fTexY));
 
-	int nNumVertex = (nSegX + 1) + 1;
-	int nNumPolygon = (nNumVertex - 1) * 3;
-	int nNumidx = nNumPolygon + 2;
-
-	//インデックスバッファの生成
-	pDevice->CreateIndexBuffer(sizeof(WORD) * nNumidx,
-		D3DUSAGE_WRITEONLY,
-		D3DFMT_INDEX16,
-		D3DPOOL_MANAGED,
-		&m_pIdxBuffMeshDome,
-		NULL);
-
-	WORD* pIdx;
-
-	//インデックスバッファのロック
-	m_pIdxBuffMeshDome->Lock(0, 0, (void**)&pIdx, 0);
-
 	int nCntIdx = 0;
 
 	for (int IndxCount2 = 0; IndxCount2 < nSegX; IndxCount2++)
 	{
-		pIdx[nCntIdx] = (WORD)0;
-		pIdx[nCntIdx + 1] = (WORD)IndxCount2 + 1;
-		pIdx[nCntIdx + 2] = (WORD)IndxCount2 + 2;
+		// インデックスバッファの設定
+		SetIndexBuffer((WORD)0, nCntIdx);
+		SetIndexBuffer((WORD)IndxCount2 + 1, nCntIdx + 1);
+		SetIndexBuffer((WORD)IndxCount2 + 2, nCntIdx + 2);
 
 		nCntIdx += 3;
 	}
 
-	pIdx[nCntIdx] = (WORD)0;
-	pIdx[nCntIdx + 1] = (WORD)nSegX;
-	pIdx[nCntIdx + 2] = (WORD)1;
-
-	nCntIdx += 3;
-
-	//インデックスバッファのアンロック
-	m_pIdxBuffMeshDome->Unlock();
+	m_nOffsetIdx = nCntIdx;
 
 	// テクスチャのオフセット
 	fTexX = 1.0f / nSegX;
@@ -283,18 +260,24 @@ void CMeshDome::SetDome(const int nSegX, const int nSegZ, const float fRadius, c
 
 	int IndxCount3 = nSegX + 1;//X
 
-	int IdxCnt = 0;//配列
+	int IdxCnt = m_nOffsetIdx;//配列
 
 	int Num = 0;//
+
+	int Index0 = 0;
+	int Index1 = 0;
 
 	//インデックスの設定
 	for (int IndxCount1 = 0; IndxCount1 < nSegZ; IndxCount1++)
 	{
 		for (int IndxCount2 = 0; IndxCount2 <= nSegX; IndxCount2++, IndxCount3++, Num++)
 		{
+			Index0 = IndxCount3 + OffsetIdx;
+			Index1 = Num + OffsetIdx;
+
 			// インデックスバッファの設定
-			SetIndexBuffer((WORD)(IndxCount3 + OffsetIdx), IdxCnt);
-			SetIndexBuffer((WORD)(Num + OffsetIdx), IdxCnt + 1);
+			SetIndexBuffer((WORD)Index0, IdxCnt);
+			SetIndexBuffer((WORD)Index1, IdxCnt + 1);
 			IdxCnt += 2;
 		}
 

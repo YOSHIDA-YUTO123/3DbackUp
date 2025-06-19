@@ -15,7 +15,7 @@
 //================================================
 // コンストラクタ
 //================================================
-CMeshImpact::CMeshImpact()
+CMeshCircle::CMeshCircle()
 {
 	m_Incol = WHITE;
 	m_Outcol = WHITE;
@@ -28,17 +28,17 @@ CMeshImpact::CMeshImpact()
 //================================================
 // デストラクタ
 //================================================
-CMeshImpact::~CMeshImpact()
+CMeshCircle::~CMeshCircle()
 {
 }
 
 //================================================
 // 生成処理
 //================================================
-CMeshImpact* CMeshImpact::Create(const D3DXVECTOR3 pos, const int nSegX, const int nSegZ, const float InRadius, const float OutRadius, const float speed, const int nLife, const D3DXCOLOR col, const D3DXVECTOR3 rot)
+CMeshCircle* CMeshCircle::Create(const D3DXVECTOR3 pos, const int nSegX, const int nSegZ, const float InRadius, const float OutRadius, const float speed, const int nLife, const D3DXCOLOR col, const D3DXVECTOR3 rot)
 {
 	// メッシュインパクトを生成
-	CMeshImpact* pMesh = new CMeshImpact;
+	CMeshCircle* pMesh = new CMeshCircle;
 
 	// 優先順位の取得
 	int nPriority = pMesh->GetPriority();
@@ -96,7 +96,7 @@ CMeshImpact* CMeshImpact::Create(const D3DXVECTOR3 pos, const int nSegX, const i
 //================================================
 // 初期化処理
 //================================================
-HRESULT CMeshImpact::Init(void)
+HRESULT CMeshCircle::Init(void)
 {
 	// 初期化処理
 	if (FAILED(CMesh::Init()))
@@ -113,7 +113,7 @@ HRESULT CMeshImpact::Init(void)
 //================================================
 // 終了処理
 //================================================
-void CMeshImpact::Uninit(void)
+void CMeshCircle::Uninit(void)
 {
 	// 終了処理
 	CMesh::Uninit();
@@ -122,7 +122,7 @@ void CMeshImpact::Uninit(void)
 //================================================
 // 更新処理
 //================================================
-void CMeshImpact::Update(void)
+void CMeshCircle::Update(void)
 {
 	int nCntVtx = 0;
 
@@ -180,7 +180,7 @@ void CMeshImpact::Update(void)
 //================================================
 // 描画処理
 //================================================
-void CMeshImpact::Draw(void)
+void CMeshCircle::Draw(void)
 {
 	// デバイスの取得
 	LPDIRECT3DDEVICE9 pDevice = CManager::GetRenderer()->GetDevice();
@@ -206,7 +206,7 @@ void CMeshImpact::Draw(void)
 //================================================
 // インパクトの設定処理
 //================================================
-void CMeshImpact::SetImpact(const int nSegX,const float InRadius, const float OutRadius)
+void CMeshCircle::SetImpact(const int nSegX,const float InRadius, const float OutRadius)
 {
 	int nCntVtx = 0;
 

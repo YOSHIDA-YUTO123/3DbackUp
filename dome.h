@@ -32,6 +32,6 @@ public:
 	void Draw(void);
 	void SetDome(const int nSegX, const int nSegZ, const float fRadius, const float fHeight);
 private:
-	LPDIRECT3DINDEXBUFFER9 m_pIdxBuffMeshDome;  // インデックスバッファへのポインタ
+	int m_nOffsetIdx;
 };
 #endif

@@ -22,6 +22,7 @@
 #include "meshfield.h"
 #include "cylinder.h"
 #include "dome.h"
+#include "enemy.h"
 
 //***************************************************
 // 静的メンバ変数の宣言
@@ -106,17 +107,20 @@ HRESULT CManager::Init(HINSTANCE hInstance,HWND hWnd, BOOL bWindow)
 	// ライトの生成
 	m_pLight = new CLight;
 	m_pLight->Init();
-	m_pLight->SetLight(D3DLIGHT_DIRECTIONAL, WHITE, D3DXVECTOR3(-0.2f, -0.8f, -0.4f), D3DXVECTOR3(0.0f, 500.0f, 0.0f));
+	m_pLight->SetLight(D3DLIGHT_DIRECTIONAL, WHITE, D3DXVECTOR3(-0.2f, -0.5f, -0.4f), D3DXVECTOR3(3000.0f, 0.0f, 0.0f));
+	//m_pLight->SetLight(D3DLIGHT_DIRECTIONAL, WHITE, D3DXVECTOR3(-0.2f, -0.1f, 0.4f), D3DXVECTOR3(0.0f, 500.0f, 0.0f));
 
-	m_pLight->SetLight(D3DLIGHT_DIRECTIONAL, WHITE, D3DXVECTOR3(-0.2f, -0.8f, 0.4f), D3DXVECTOR3(0.0f, 500.0f, 0.0f));
+	//m_pLight->SetLight(D3DLIGHT_DIRECTIONAL, WHITE, D3DXVECTOR3(-0.2f, -0.8f, -0.4f), D3DXVECTOR3(0.0f, 500.0f, 0.0f));
 
-	m_pLight->SetLight(D3DLIGHT_DIRECTIONAL, WHITE, D3DXVECTOR3(0.2f, -0.8f, -0.4f), D3DXVECTOR3(0.0f, 500.0f, 0.0f));
+	//m_pLight->SetLight(D3DLIGHT_DIRECTIONAL, WHITE, D3DXVECTOR3(-0.2f, -0.8f, 0.4f), D3DXVECTOR3(0.0f, 500.0f, 0.0f));
+
+	//m_pLight->SetLight(D3DLIGHT_DIRECTIONAL, WHITE, D3DXVECTOR3(0.2f, -0.8f, -0.4f), D3DXVECTOR3(0.0f, 500.0f, 0.0f));
 
 	// フィールドの設定
-	m_pMeshField = CMeshField::Create(VEC3_NULL, 25, 25, D3DXVECTOR2(7500.0f, 7500.0f));
+	m_pMeshField = CMeshField::Create(VEC3_NULL ,4, 4, D3DXVECTOR2(2500.0f,2500.0f));
 
-	// シリンダーの生成
-	CMeshCylinder::Create(D3DXVECTOR3(500.0f,0.0f,0.0f), 10, 10,500.0f,500.0f);
+	//// シリンダーの生成
+	//CMeshCylinder::Create(D3DXVECTOR3(500.0f,0.0f,0.0f), 10, 10,500.0f,500.0f);
 
 	// ドームの生成
 	CMeshDome::Create(VEC3_NULL,10,10,60000.0f,20000.0f);
@@ -127,6 +131,8 @@ HRESULT CManager::Init(HINSTANCE hInstance,HWND hWnd, BOOL bWindow)
 	m_pPlayer = CPlayer::Create();
 
 	CObjectX::Create(VEC3_NULL, "data/MODEL/arena.x");
+
+	CEnemy::Create(D3DXVECTOR3(0.0f,0.0f,3045.0f));
 
 	// 結果を返す
 	return S_OK;

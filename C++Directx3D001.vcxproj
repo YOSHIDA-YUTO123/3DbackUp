@@ -183,7 +183,7 @@
     <ClCompile Include="objectX.cpp" />
     <ClCompile Include="particle.cpp" />
     <ClCompile Include="player.cpp" />
-    <ClCompile Include="process.cpp" />
+    <ClCompile Include="math.cpp" />
     <ClCompile Include="renderer.cpp" />
     <ClCompile Include="score.cpp" />
     <ClCompile Include="sound.cpp" />
@@ -219,7 +219,7 @@
     <ClInclude Include="particle.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="player.h" />
-    <ClInclude Include="process.h" />
+    <ClInclude Include="math.h" />
     <ClInclude Include="renderer.h" />
     <ClInclude Include="score.h" />
     <ClInclude Include="sound.h" />

@@ -196,8 +196,11 @@ void CModel::Draw(void)
 //===================================================
 void CModel::DrawShadow(void)
 {
+	// レンダラーの取得
+	CRenderer* pRenderer = CManager::GetRenderer();
+
 	// デバイスの取得
-	LPDIRECT3DDEVICE9 pDevice = CManager::GetRenderer()->GetDevice();
+	LPDIRECT3DDEVICE9 pDevice = pRenderer->GetDevice();
 
 	// ライトの方向
 	D3DXVECTOR4 lightDir = D3DXVECTOR4(-0.707f, -0.707f, -0.707f, 0.0f);

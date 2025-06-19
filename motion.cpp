@@ -11,7 +11,7 @@
 #include "motion.h"
 #include<stdio.h>
 #include"object.h"
-#include"process.h"
+#include"math.h"
 #include "debugproc.h"
 #include "manager.h"
 
@@ -268,7 +268,6 @@ void CMotion::LoadMotionSet(CMotion* pMotion, ifstream& File,string nowLine, con
 	string line,input;
 
 	int loop = 0;
-	static int motiontype = 0;
 	int nKey = 0;
 	int nCntModel = 0;
 
@@ -290,7 +289,7 @@ void CMotion::LoadMotionSet(CMotion* pMotion, ifstream& File,string nowLine, con
 				value_Input >> loop;
 
 				// ループするかどうか
-				pMotion->m_apMotionInfo[motiontype].bLoop = (loop == 1) ? true : false;
+				pMotion->m_apMotionInfo[pMotion->m_nNumMotion].bLoop = (loop == 1) ? true : false;
 			}
 
 			if (line.find("NUM_KEY") != string::npos)
@@ -302,16 +301,16 @@ void CMotion::LoadMotionSet(CMotion* pMotion, ifstream& File,string nowLine, con
 				istringstream value_Input = pMotion->SetInputvalue(input);
 
 				// 数値を代入する
-				value_Input >> pMotion->m_apMotionInfo[motiontype].nNumkey;
+				value_Input >> pMotion->m_apMotionInfo[pMotion->m_nNumMotion].nNumkey;
 
 				// キーの総数を代入
-				int nNumKey = pMotion->m_apMotionInfo[motiontype].nNumkey;
+				int nNumKey = pMotion->m_apMotionInfo[pMotion->m_nNumMotion].nNumkey;
 
-				m_apMotionInfo[motiontype].apKeyInfo = CMotionManager::CreateKeyInfo(nNumKey);
+				m_apMotionInfo[pMotion->m_nNumMotion].apKeyInfo = CMotionManager::CreateKeyInfo(nNumKey);
 
 				for (int nCntKey = 0; nCntKey < nNumKey; nCntKey++)
 				{
-					m_apMotionInfo[motiontype].apKeyInfo[nCntKey].apKey = CMotionManager::CreateKey(m_nNumModel);
+					m_apMotionInfo[pMotion->m_nNumMotion].apKeyInfo[nCntKey].apKey = CMotionManager::CreateKey(m_nNumModel);
 				}
 			}
 
@@ -324,7 +323,7 @@ void CMotion::LoadMotionSet(CMotion* pMotion, ifstream& File,string nowLine, con
 				istringstream value_Input = pMotion->SetInputvalue(input);
 
 				// 数値を代入する
-				value_Input >> pMotion->m_apMotionInfo[motiontype].apKeyInfo[nKey].nFrame;
+				value_Input >> pMotion->m_apMotionInfo[pMotion->m_nNumMotion].apKeyInfo[nKey].nFrame;
 			}
 
 			if (line.find("POS") != string::npos)
@@ -336,9 +335,9 @@ void CMotion::LoadMotionSet(CMotion* pMotion, ifstream& File,string nowLine, con
 				istringstream value_Input = pMotion->SetInputvalue(input);
 
 				// 数値を代入する
-				value_Input >> pMotion->m_apMotionInfo[motiontype].apKeyInfo[nKey].apKey[nCntModel].fPosX;
-				value_Input >> pMotion->m_apMotionInfo[motiontype].apKeyInfo[nKey].apKey[nCntModel].fPosY;
-				value_Input >> pMotion->m_apMotionInfo[motiontype].apKeyInfo[nKey].apKey[nCntModel].fPosZ;
+				value_Input >> pMotion->m_apMotionInfo[pMotion->m_nNumMotion].apKeyInfo[nKey].apKey[nCntModel].fPosX;
+				value_Input >> pMotion->m_apMotionInfo[pMotion->m_nNumMotion].apKeyInfo[nKey].apKey[nCntModel].fPosY;
+				value_Input >> pMotion->m_apMotionInfo[pMotion->m_nNumMotion].apKeyInfo[nKey].apKey[nCntModel].fPosZ;
 			}
 			if (line.find("ROT") != string::npos)
 			{
@@ -349,9 +348,9 @@ void CMotion::LoadMotionSet(CMotion* pMotion, ifstream& File,string nowLine, con
 				istringstream value_Input = pMotion->SetInputvalue(input);
 
 				// 数値を代入する
-				value_Input >> pMotion->m_apMotionInfo[motiontype].apKeyInfo[nKey].apKey[nCntModel].fRotX;
-				value_Input >> pMotion->m_apMotionInfo[motiontype].apKeyInfo[nKey].apKey[nCntModel].fRotY;
-				value_Input >> pMotion->m_apMotionInfo[motiontype].apKeyInfo[nKey].apKey[nCntModel].fRotZ;
+				value_Input >> pMotion->m_apMotionInfo[pMotion->m_nNumMotion].apKeyInfo[nKey].apKey[nCntModel].fRotX;
+				value_Input >> pMotion->m_apMotionInfo[pMotion->m_nNumMotion].apKeyInfo[nKey].apKey[nCntModel].fRotY;
+				value_Input >> pMotion->m_apMotionInfo[pMotion->m_nNumMotion].apKeyInfo[nKey].apKey[nCntModel].fRotZ;
 			}
 
 			if (line.find("END_KEY") != string::npos)
@@ -370,15 +369,14 @@ void CMotion::LoadMotionSet(CMotion* pMotion, ifstream& File,string nowLine, con
 			{
 				nKey = NULL;
 
-				if (motiontype >= 0 && motiontype <= nNumMotion - 1)
+				if (pMotion->m_nNumMotion <= nNumMotion - 1)
 				{
-					motiontype++;
+					pMotion->m_nNumMotion++;
 				}
 				else
 				{
 				}
 
-				pMotion->m_nNumMotion = motiontype;
 
 				break;
 			}
@@ -452,20 +450,12 @@ void CMotion::FinishFirstBlend(void)
 		m_nKeyBlend = 0;
 		m_nKey = 0;
 
-		for (int nCnt = 0; nCnt < m_apMotionInfo[m_motiontypeBlend].nNumkey; nCnt++)
-		{
-			if (m_nCounterBlend >= m_apMotionInfo[m_motiontypeBlend].apKeyInfo[nCnt].nFrame)
-			{
-				// キーを増やす
-				m_nKey = (m_nKey + 1) % m_apMotionInfo[m_motiontypeBlend].nNumkey;
-				m_nCounterBlend -= m_apMotionInfo[m_motiontypeBlend].apKeyInfo[nCnt].nFrame;
-			}
-		}
-
 		// モーションをブレンドしたモーションにする
 		m_motiontype = m_motiontypeBlend;
 
 		m_nCountMotion = m_nCounterBlend;
+
+		m_nCounterBlend = 0;
 	}
 }
 
@@ -685,12 +675,13 @@ void CMotion::Update(CModel** pModel,const int nNumModel)
 	FinishFirstBlend();
 
 	// キーが最大かつブレンドのカウントが最大になった
-	if (m_bFinishMotion == true && m_nFrameBlend <= m_nCounterBlend && m_bFirstMotion == false)
+	if (IsFinishEndBlend() == true)
 	{
 		m_bFinishMotion = false;			// もとに戻す
 		m_bBlendMotion = false;				// もとに戻す
 		m_nCountMotion = m_nFrameBlend;	    // フレームをブレンドした先のフレームに合わせる
 		m_motiontype = NEUTRAL;				// モーションタイプをニュートラルにする
+		m_nCounterBlend = 0;
 	}
 
 	if (m_nCountMotion >= m_apMotionInfo[m_motiontype].apKeyInfo[m_nKey].nFrame)
@@ -724,9 +715,16 @@ void CMotion::SetMotion(const int motiontype,bool bBlend,const int nBlendFrame)
 
 	if (bBlend == true)
 	{
-		if (m_apMotionInfo[motiontype].bLoop == false || m_bFirstMotion == false)
+		//if (m_apMotionInfo[motiontype].bLoop == false || m_bFirstMotion == false)
+		//{
+		//	m_nFrameBlend = nBlendFrame;
+		//	m_nCounterBlend = 0;
+		//}
+
+		m_nFrameBlend = nBlendFrame;
+
+		if (m_apMotionInfo[motiontype].apKeyInfo[0].nFrame <= m_nCounterBlend)
 		{
-			m_nFrameBlend = nBlendFrame;
 			m_nCounterBlend = 0;
 		}
 
@@ -756,6 +754,18 @@ bool CMotion::IsEndMotion(void)
 		m_bBlendMotion == true &&
 		m_bLoopMotion == false &&
 		m_bFirstMotion == false)
+	{
+		return true;
+	}
+	return false;
+}
+
+//===================================================
+// 終わりのブレンドが完了したか判定
+//===================================================
+bool CMotion::IsFinishEndBlend(void)
+{
+	if (m_bFinishMotion == true && m_nFrameBlend <= m_nCounterBlend && m_bFirstMotion == false)
 	{
 		return true;
 	}

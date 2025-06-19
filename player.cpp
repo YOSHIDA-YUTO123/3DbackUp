@@ -20,9 +20,8 @@
 //***************************************************
 // マクロ定義
 //***************************************************
-#define MAX_GLABITY (1.0f)			// 重力の大きさ
 #define PLAYER_JUMP_HEIGHT (25.0f)  // ジャンプ量
-#define MOVE_SPEED (1.5f)			// 移動速度
+#define MOVE_SPEED (10.5f)			// 移動速度
 
 //===================================================
 // コンストラクタ
@@ -95,8 +94,7 @@ void CPlayer::Uninit(void)
 		m_pScore = nullptr;
 	}
 
-	// 自分自身の破棄
-	Release();
+	CCharacter3D::Uninit();
 }
 
 //===================================================
@@ -162,13 +160,14 @@ void CPlayer::Update(void)
 		if (m_pMotion->GetBlendMotionType() == MOTIONTYPE_JUMP) {
 
 			m_pMotion->SetMotion(MOTIONTYPE_LANDING, true, 5);
-			CMeshImpact::Create(pos, 18, 1, 10.0f, 80.0f, 10.0f, 60, D3DXCOLOR(1.0f, 1.0f, 0.5f, 1.0f));
+			CMeshCircle::Create(pos, 18, 1, 10.0f, 80.0f, 10.0f, 60, D3DXCOLOR(1.0f, 1.0f, 0.5f, 1.0f));
 		}
 	}
 	else
 	{
 		m_bJump = false;
 	}
+
 	// 重力を加算
 	m_move.y += -MAX_GLABITY;
 
@@ -193,14 +192,22 @@ void CPlayer::Update(void)
 		m_pMotion->SetMotion(MOTIONTYPE_ACTION, true, 5);
 	}
 
+	if (pKeyboard->GetTrigger(DIK_V))
+	{
+		pMesh->SetWave(pos, 120, 5.0f, 10.0f, 300.0f, 380.0f);
+	}
+
 	// 位置の設定
 	CCharacter3D::SetPosition(pos);
 
 	// プレイヤーのモーションの遷移
 	TransitionMotion();
 
-	// モーションの更新処理
-	m_pMotion->Update(&m_apModel[0], m_nNumModel);
+	if (m_pMotion != nullptr)
+	{
+		// モーションの更新処理
+		m_pMotion->Update(&m_apModel[0], m_nNumModel);
+	}
 
 	// 角度の補間
 	CCharacter3D::SmoothAngle(0.1f);

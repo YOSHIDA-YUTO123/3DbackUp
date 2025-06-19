@@ -19,13 +19,13 @@
 //************************************************
 // メッシュフィールドクラスの定義
 //************************************************
-class CMeshImpact : public CMesh
+class CMeshCircle : public CMesh
 {
 public:
-	CMeshImpact();
-	~CMeshImpact();
+	CMeshCircle();
+	~CMeshCircle();
 
-	static CMeshImpact* Create(const D3DXVECTOR3 pos, const int nSegX, const int nSegZ, const float InRadius, const float OutRadius,const float speed,const int nLife,const D3DXCOLOR col = WHITE,const D3DXVECTOR3 rot = VEC3_NULL);
+	static CMeshCircle* Create(const D3DXVECTOR3 pos, const int nSegX, const int nSegZ, const float InRadius, const float OutRadius,const float speed,const int nLife,const D3DXCOLOR col = WHITE,const D3DXVECTOR3 rot = VEC3_NULL);
 	HRESULT Init(void);
 	void Uninit(void);
 	void Update(void);

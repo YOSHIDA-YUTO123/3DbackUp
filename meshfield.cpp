@@ -10,11 +10,13 @@
 //************************************************
 #include "meshfield.h"
 #include"manager.h"
+#include "math.h"
 
 //************************************************
 // マクロ定義
 //************************************************
-#define NUM_POLYGON (2) // 判定するポリゴンの数
+#define NUM_POLYGON (2)		 // 判定するポリゴンの数
+#define NULL_VECTOR (999.0f) // vectorの空配列
 
 //================================================
 // コンストラクタ
@@ -23,6 +25,8 @@ CMeshField::CMeshField()
 {
 	m_fWidth = NULL;
 	m_fHeight = NULL;
+	memset(&m_Wave, NULL, sizeof(m_Wave));
+	m_pNor = nullptr;
 }
 
 //================================================
@@ -98,7 +102,7 @@ HRESULT CMeshField::Init(void)
 	}
 
 	// テクスチャのIDの設定
-	CMesh::SetTextureID("data/TEXTURE/field.jpg");
+	CMesh::SetTextureID("data/TEXTURE/field.png");
 
 	return S_OK;
 }
@@ -108,6 +112,11 @@ HRESULT CMeshField::Init(void)
 //================================================
 void CMeshField::Uninit(void)
 {
+	if (m_pNor != nullptr)
+	{
+		delete[]m_pNor;
+		m_pNor = nullptr;
+	}
 	// 終了処理
 	CMesh::Uninit();
 }
@@ -117,8 +126,8 @@ void CMeshField::Uninit(void)
 //================================================
 void CMeshField::Update(void)
 {
-	CInputKeyboard* pKeyboard = CManager::GetInputKeyboard();
 	CPlayer* pPlayer = CManager::GetPlayer();
+	CInputKeyboard* pKeyboard = CManager::GetInputKeyboard();
 
 	int nSegX = GetSegX();
 	int nSegZ = GetSegZ();
@@ -126,65 +135,279 @@ void CMeshField::Update(void)
 	// 頂点数の設定
 	int nNumVtx = (nSegX + 1) * (nSegZ + 1);
 
+	//// ポリゴン数の設定
+	//int nNumPolygon = ((nSegX * nSegZ) * 2) + (4 * (nSegZ - 1));
+
+	//// インデックス数の設定
+	//int nNumIndex = nNumPolygon + 2;
+
+	//for (int nCnt = 0; nCnt < nNumIndex; nCnt++)
+	//{
+	//	// インデックスを取得
+	//	int nIdx0 = GetIndex(nCnt);
+	//	int nIdx1 = GetIndex(nCnt + 1);
+	//	int nIdx2 = GetIndex(nCnt + 2);
+
+	//	// 頂点を取得
+	//	D3DXVECTOR3 vtx0 = GetVtxPos(nIdx0);
+	//	D3DXVECTOR3 vtx1 = GetVtxPos(nIdx1);
+	//	D3DXVECTOR3 vtx2 = GetVtxPos(nIdx2);
+
+	//	D3DXVECTOR3 edge0 = vtx1 - vtx0; // 辺ベクトル0
+	//	D3DXVECTOR3 edge1 = vtx2 - vtx1; // 辺ベクトル1
+	//	D3DXVECTOR3 edge2 = vtx0 - vtx2; // 辺ベクトル2
+
+	//	D3DXVECTOR3 Normal = { 0.0f,-1.0f,0.0f};
+
+	//	//if (nCnt % 2 == 0)
+	//	//{
+	//	//	// 偶数番目の三角形
+	//	//	D3DXVec3Cross(&Normal, &edge0, &edge1);
+	//	//}
+	//	//else
+	//	//{
+	//	//	// 奇数番目の三角形（順序が逆になっている）
+	//	//	D3DXVec3Cross(&Normal, &edge1, &edge0);
+	//	//}
+
+	//	//D3DXVec3Normalize(&Normal, &Normal);
+
+	//	SetNormal(Normal, nIdx0);
+	//	SetNormal(Normal, nIdx1);
+	//	SetNormal(Normal, nIdx2);
+	//}
+#if 0
+
+	if (m_Wave.bUse == true)
+	{
+		if (m_Wave.nWaveCounter >= m_Wave.nWaveTime)
+		{
+			m_Wave.bUse = false;
+			m_Wave.nWaveCounter = 0;
+		}
+
+		m_Wave.nWaveCounter++;
+
+		//m_fTime += 5.0f;
+		m_Wave.fTime += m_Wave.fSpeed;
+	}
+
 	for (int nCnt = 0; nCnt < nNumVtx; nCnt++)
 	{
 		D3DXVECTOR3 pos = GetVtxPos(nCnt);
 
-		D3DXVECTOR3 diff = pos - pPlayer->GetPosition();
+		D3DXVECTOR3 diff = m_Wave.epicenter - pos;
 
-		float dis = sqrtf((diff.x * diff.x) + (diff.y * diff.y) + (diff.z * diff.z));
-		float fradius = 10.0f + 10.0f;
-		fradius = fradius * fradius;
+		float dis = sqrtf((diff.x * diff.x) + (diff.z * diff.z));
 
-		if (dis <= fradius)
+		if (dis >= (m_Wave.fInRadius + m_Wave.fTime) && dis <= (m_Wave.fOutRadius + m_Wave.fTime) && m_Wave.bUse == true)
 		{
-			if (pKeyboard->GetPress(DIK_UP))
-			{
-				pos.y += 50.0f;
+			float dest = m_Wave.fWaveHeight + sinf(dis * 0.005f);
 
-				SetVtxPos(pos, nCnt);
-			}
-		}
-	}
-
-	// ポリゴン数の設定
-	int nNumPolygon = ((nSegX * nSegZ) * 2) + (4 * (nSegZ - 1));
-
-	// インデックス数の設定
-	int nNumIndex = nNumPolygon + 2;
-
-	for (int nCnt = 0; nCnt < nNumIndex - 2; nCnt++)
-	{
-		// インデックスを取得
-		int nIdx0 = GetIndex(nCnt);
-		int nIdx1 = GetIndex(nCnt + 1);
-		int nIdx2 = GetIndex(nCnt + 2);
-
-		// 頂点を取得
-		D3DXVECTOR3 vtx0 = GetVtxPos(nIdx0);
-		D3DXVECTOR3 vtx1 = GetVtxPos(nIdx1);
-		D3DXVECTOR3 vtx2 = GetVtxPos(nIdx2);
-
-		D3DXVECTOR3 edge0 = vtx1 - vtx0; // 辺ベクトル0
-		D3DXVECTOR3 edge1 = vtx2 - vtx1; // 辺ベクトル1
-		D3DXVECTOR3 edge2 = vtx0 - vtx2; // 辺ベクトル2
-
-		D3DXVECTOR3 Normal = {};
-
-		if (nCnt % 2 == 0)
-		{
-			// 偶数番目の三角形
-			D3DXVec3Cross(&Normal, &edge0, &edge1);
+			pos.y += (dest - pos.y) * 0.1f;
 		}
 		else
 		{
-			// 奇数番目の三角形（順序が逆になっている）
-			D3DXVec3Cross(&Normal, &edge1, &edge0);
+			float fRate = m_Wave.bUse ? 0.05f : 0.001f;
+			pos.y += (0.0f - pos.y) * fRate;
 		}
+		SetVtxPos(pos, nCnt);
+	}
+#endif // 0
 
-		D3DXVec3Normalize(&Normal, &Normal);
+	
+#if 0
 
-		SetNormal(Normal, nIdx0);
+	m_Wave.fTime += 1.0f / 25.0f;
+	
+	for (int nCnt = 0; nCnt < nNumVtx; nCnt++)
+	{
+		D3DXVECTOR3 pos = GetVtxPos(nCnt);
+
+		D3DXVECTOR3 diff = pPlayer->GetPosition() - pos;
+
+		float dis = sqrtf((diff.x * diff.x) + (diff.z * diff.z));
+
+		float offset = sinf((dis * 0.005f) + m_Wave.fTime);
+
+		pos.y = offset * 150.0f;
+		
+		SetVtxPos(pos, nCnt);
+	}
+#endif // 0
+
+	for (int nCnt = 0; nCnt < nNumVtx; nCnt++)
+	{
+		D3DXVECTOR3 pos = GetVtxPos(nCnt);
+
+		D3DXVECTOR3 diff = pPlayer->GetPosition() - pos;
+
+		float sqdiffX = diff.x * diff.x;
+		float sqdiffY = diff.y * diff.y;
+		float sqdiffZ = diff.z * diff.z;
+
+		float fDistance = (sqdiffX + sqdiffY + sqdiffZ);
+
+		float fRadius = 50.0f + 50.0f;
+
+		fRadius = fRadius * fRadius;
+
+		if (fDistance <= fRadius)
+		{
+			if (pKeyboard->GetPress(DIK_UP))
+			{
+				pos.y += 5.0f;
+			}
+			else if (pKeyboard->GetPress(DIK_DOWN))
+			{
+				pos.y -= 5.0f;
+			}
+		}
+		SetVtxPos(pos, nCnt);
+	}
+
+	int nCnt = 0;
+
+	//インデックスの設定
+	for (int nCntZ = 0; nCntZ <= nSegZ; nCntZ++)
+	{
+		for (int nCntX = 0; nCntX <= nSegX; nCntX++)
+		{
+			D3DXVECTOR3 vtx0, vtx1, vtx2,vtx3;
+			vtx0 = vtx1 = vtx2 = vtx3 = VEC3_NULL;
+
+			D3DXVECTOR3 vec0, vec1, vec2, vec3;
+			vec0 = vec1 = vec2 = vec3 = VEC3_NULL;
+			int nIdx0 = 0;
+			int nIdx1 = 0;
+			int nIdx2 = 0;
+			D3DXVECTOR3 Nor0,Nor1,Nor2,Nor3;
+			Nor0 = Nor1 = Nor2 = Nor3 = VEC3_NULL;
+
+			D3DXVECTOR3 Normal = VEC3_NULL;
+
+			// 左上だったら
+			if (nCntX == 0 && nCntZ == 0)
+			{
+				nIdx0 = 0;
+				nIdx1 = 1;
+				nIdx2 = nSegX + 1;
+
+				vtx0 = GetVtxPos(nIdx0);
+				vtx1 = GetVtxPos(nIdx1);
+				vtx2 = GetVtxPos(nIdx2);
+
+				vec0 = vtx1 - vtx0;
+				vec1 = vtx2 - vtx0;
+
+				D3DXVec3Cross(&Normal, &vec0, &vec1);
+			}
+			else
+			{
+				// 左の辺(角以外)だったら
+				if (nCntX == 0 && nCnt == (nSegX + 1) * nCntZ)
+				{
+					nIdx0 = nCnt - (nSegX + 1);
+					nIdx1 = nCnt + 1;
+					nIdx2 = nCnt + (nSegX + 1);
+
+					vtx0 = GetVtxPos(nIdx0);
+					vtx1 = GetVtxPos(nIdx1);
+					vtx2 = GetVtxPos(nIdx2);
+					vtx3 = GetVtxPos(nCnt);
+
+					vec0 = vtx0 - vtx3;
+					vec1 = vtx1 - vtx3;
+					vec2 = vtx2 - vtx3;
+
+					D3DXVec3Cross(&Nor0, &vec0, &vec1);
+					D3DXVec3Cross(&Nor1, &vec1, &vec2);
+
+					Normal = (Nor0 + Nor1) * 0.5f;
+				}
+			}
+
+			// 左下だったら
+			if (nCntX == 0 && nCntZ == nSegZ)
+			{
+				nIdx0 = (nSegX + 1) * nSegZ;
+				nIdx1 = (nSegX + 1) * (nSegZ - 1);
+				nIdx2 = ((nSegX + 1) * nSegZ) + 1;
+
+				vtx0 = GetVtxPos(nIdx0);
+				vtx1 = GetVtxPos(nIdx1);
+				vtx2 = GetVtxPos(nIdx2);
+
+				vec0 = vtx1 - vtx0;
+				vec1 = vtx2 - vtx0;
+
+				D3DXVec3Cross(&Normal, &vec0, &vec1);
+			}
+
+			// 右上だったら
+			if (nCntX == nSegX && nCntZ == 0)
+			{
+				nIdx0 = nSegX;
+				nIdx1 = nSegX - 1;
+				nIdx2 = nSegX + 1 + nCntX;
+
+				vtx0 = GetVtxPos(nIdx0);
+				vtx1 = GetVtxPos(nIdx1);
+				vtx2 = GetVtxPos(nIdx2);
+
+				vec0 = vtx1 - vtx0;
+				vec1 = vtx2 - vtx0;
+
+				D3DXVec3Cross(&Normal, &vec1, &vec0);
+			}
+			else
+			{
+				// 右の辺(角以外)だったら
+				if (nCntX == nSegX && nCnt == (nCntX * (nCntZ + 1)) + nCntZ)
+				{
+					nIdx0 = nCnt - (nSegX + 1);
+					nIdx1 = nCnt - 1;
+					nIdx2 = nCnt + (nSegX + 1);
+
+					vtx0 = GetVtxPos(nIdx0);
+					vtx1 = GetVtxPos(nIdx1);
+					vtx2 = GetVtxPos(nIdx2);
+					vtx3 = GetVtxPos(nCnt);
+
+					vec0 = vtx0 - vtx3;
+					vec1 = vtx1 - vtx3;
+					vec2 = vtx2 - vtx3;
+
+					D3DXVec3Cross(&Nor0, &vec1, &vec0);
+					D3DXVec3Cross(&Nor1, &vec2, &vec1);
+
+					Normal = (Nor0 + Nor1) * 0.5f;
+				}
+			}
+
+			// 右下だったら
+			if (nCnt == ((nSegX + 1) * (nSegZ + 1)) - 1)
+			{
+				nIdx0 = ((nSegX + 1) * (nSegZ + 1)) - 1;
+				nIdx1 = nIdx0 - (nSegX + 1);
+				nIdx2 = nIdx0 - 1;
+
+				vtx0 = GetVtxPos(nIdx0);
+				vtx1 = GetVtxPos(nIdx1);
+				vtx2 = GetVtxPos(nIdx2);
+
+				vec0 = vtx1 - vtx0;
+				vec1 = vtx2 - vtx0;
+
+				D3DXVec3Cross(&Normal, &vec1, &vec0);
+			}
+
+
+			D3DXVec3Normalize(&Normal, &Normal);
+
+			SetNormal(Normal, nCnt);
+			nCnt++;
+		}
 	}
 }
 
@@ -209,6 +432,10 @@ void CMeshField::SetMeshField(const int nSegX, const int nSegZ, const D3DXVECTOR
 
 	D3DXVECTOR3 posWk;
 
+	int nNumVtx = (nSegX + 1) * (nSegZ + 1);
+
+	m_pNor = new D3DXVECTOR3[nNumVtx];
+
 	for (int nCntZ = 0; nCntZ <= nSegZ; nCntZ++)
 	{
 		for (int nCntX = 0; nCntX <= nSegX; nCntX++)
@@ -219,7 +446,7 @@ void CMeshField::SetMeshField(const int nSegX, const int nSegZ, const D3DXVECTOR
 			posWk.z = Size.y - ((Size.y / nSegZ) * nCntZ) - (Size.y * 0.5f);
 
 			// 頂点バッファの設定
-			SetVtxBuffer(posWk, nCntVtx, D3DXVECTOR2((fTexPosX * nCntX), (fTexPosY * nCntZ)));
+			SetVtxBuffer(posWk, nCntVtx, D3DXVECTOR2((fTexPosX * nCntX), (fTexPosY * nCntZ)),D3DXVECTOR3(0.0f,0.0f,0.0f));
 
 			nCntVtx++;
 		}
@@ -384,4 +611,24 @@ bool CMeshField::Collision(D3DXVECTOR3* pPos)
 	}
 
 	return bLanding;//判定を返す
+}
+
+//================================================
+// 波の設定処理
+//================================================
+void CMeshField::SetWave(const D3DXVECTOR3 epicenter, const int nTime,const float fSpeed,const float fInRadius,const float fOutRadius,const float fWaveHeight)
+{
+	if (m_Wave.bUse == false)
+	{
+		m_Wave.epicenter = epicenter;
+		m_Wave.fSpeed = fSpeed;
+		m_Wave.nWaveTime = nTime;
+		m_Wave.fInRadius = fInRadius;
+		m_Wave.fOutRadius = fOutRadius;
+		m_Wave.fWaveHeight = fWaveHeight;
+		m_Wave.nWaveCounter = NULL;
+		m_Wave.fTime = NULL;
+
+		m_Wave.bUse = true;
+	}
 }

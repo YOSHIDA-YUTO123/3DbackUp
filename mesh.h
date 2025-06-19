@@ -29,7 +29,7 @@ public:
 	virtual void Uninit(void);
 	virtual void Update(void) = 0;
 	virtual void Draw(void);
-	virtual void Draw(D3DPRIMITIVETYPE type,const int nNumvtx,const int nNumPolygon,const int nStartIdx,const int nMinVertex);
+	virtual void SetUpDraw(void);
 
 	int GetSegX(void) const { return m_nSegmentX; }
 	int GetSegZ(void) const { return m_nSegmentZ; }
@@ -50,7 +50,7 @@ public:
 	int GetIndex(const int nIdx);
 	void SetVtxPos(const D3DXVECTOR3 pos, const int nIdx);
 	void SetNormal(const D3DXVECTOR3 nor, const int nIdx);
-
+	LPDIRECT3DVERTEXBUFFER9 GetBuffer(void) const { return m_pVtxBuffMesh; }
 
 private:
 	LPDIRECT3DVERTEXBUFFER9 m_pVtxBuffMesh; // 頂点バッファへのポインタ

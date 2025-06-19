@@ -13,7 +13,7 @@
 #include"manager.h"
 #include"renderer.h"
 #include "player.h"
-#include"process.h"
+#include"math.h"
 
 //***************************************************
 // マクロ定義
@@ -49,9 +49,9 @@ CCamera::~CCamera()
 //===================================================
 HRESULT CCamera::Init(void)
 {
-	m_posV = D3DXVECTOR3(0.0f, 850.0f, -1400.0f);		// 視点
+	m_posV = D3DXVECTOR3(0.0f, 590.0f, -1403.0f);		// 視点
 
-	m_rot = D3DXVECTOR3(D3DX_PI * 0.75f, 0.0f, 0.0f);	// 角度
+	m_rot = D3DXVECTOR3(D3DX_PI * 0.65f, 0.0f, 0.0f);	// 角度
 
 	float fRotX = m_posV.x - m_posR.x;
 	float fRotY = m_posV.y - m_posR.y;
@@ -85,11 +85,17 @@ void CCamera::Update(void)
 	// マウスの視点移動
 	MouseView();
 
+	float fRotX = m_posV.x - m_posR.x;
+	float fRotY = m_posV.y - m_posR.y;
+	float fRotZ = m_posV.z - m_posR.z;
+
+	m_fDistance = sqrtf((fRotX * fRotX) + (fRotY * fRotY) + (fRotZ * fRotZ));
+
 	// プレイヤーの取得
 	CPlayer* pPlayer = CManager::GetPlayer();
 
 	// プレイヤーの取得
-	D3DXVECTOR3 playerPos(pPlayer->GetPosition().x, pPlayer->GetPosition().y + 500.0f, pPlayer->GetPosition().z);
+	D3DXVECTOR3 playerPos(pPlayer->GetPosition().x, pPlayer->GetPosition().y + 400.0f, pPlayer->GetPosition().z);
 	D3DXVECTOR3 playerRot = pPlayer->GetRotation();
 
 #if 0
