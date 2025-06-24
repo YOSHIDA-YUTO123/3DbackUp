@@ -29,6 +29,7 @@ public:
 	void Uninit(void);
 	void Update(void);
 	void Draw(void);
+	void SetDraw(void);
 
 	D3DXVECTOR3 GetPosition(void) const { return m_pos; }
 	D3DXVECTOR3 GetRotaition(void) const { return m_rot; }
@@ -38,6 +39,9 @@ public:
 	void SetRotaition(const D3DXVECTOR3 rot) { m_rot = rot; }
 	void SetSize(const D3DXVECTOR3 size) { m_Size = size; }
 	void SetOffsetVtx(const D3DXCOLOR col = WHITE, const int nPosX = 1, const int nPosY = 1);
+	void SetTextureID(const char* pTextureName);
+	void UpdatePosition(const D3DXVECTOR3 pos, const D3DXVECTOR3 Size);
+	void UpdateCol(const D3DXCOLOR col);
 
 	static CObject3D* Create(const D3DXVECTOR3 pos,const D3DXVECTOR3 rot,const D3DXVECTOR3 size,const char *pTextureName);
 private:

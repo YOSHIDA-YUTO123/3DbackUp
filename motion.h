@@ -20,6 +20,7 @@
 #include<fstream>
 #include<string>
 #include<sstream>
+#include<vector>
 
 using namespace std;
 
@@ -33,6 +34,7 @@ using namespace std;
 // 前方宣言
 //***************************************************
 class CModel;
+class CMotionLoader;
 
 //***************************************************
 // モーションクラスの定義
@@ -40,6 +42,15 @@ class CModel;
 class CMotion
 {
 public:
+
+	// 読み込み形式
+	typedef enum
+	{
+		LOAD_TEXT = 0,
+		LOAD_BIN,
+		LOAD_JSON,
+		LOAD_MAX
+	}LOAD;
 
 	// キーの構造体
 	struct Key
@@ -51,62 +62,57 @@ public:
 		float fRotX; // 向きX
 		float fRotY; // 向きY
 		float fRotZ; // 向きZ
-
 	};
 
 	// キー情報の構造体
 	struct Key_Info
 	{
-		int nFrame;							// 再生フレーム
-		Key *apKey;							// 各キーパーツのキー要素
+		int nFrame;						// 再生フレーム
+		vector <Key> aKey;				// 各キーパーツのキー要素
 	};
 
 	// モーション情報の構造体
-	struct Motion_Info
+	struct Info
 	{
-		bool bLoop;							// ループするかどうか
-		int nNumkey;						// キーの総数
-		Key_Info *apKeyInfo;				// キー情報
+		bool bLoop;						// ループするかどうか
+		int nNumkey;					// キーの総数
+		vector<Key_Info> aKeyInfo;		// キー情報
 	};
 
 	CMotion();
 	~CMotion();
 
-	static CMotion* Load(const char* pLoadFileName, CModel** ppModel, const int nMaxSize, int* pOutModel,const int nNumMotion);
+	static CMotion* Load(const char* pLoadFileName, CModel** ppModel, const int nMaxSize, int* pOutModel, const int nNumMotion, LOAD type);
 	void Uninit(void);
 	void Update(CModel** pModel, const int nNumModel);
 	void SetMotion(const int motiontype, bool bBlend, const int nBlendFrame);
 	bool IsEndMotion(void);
 	bool IsFinishEndBlend(void);
-	int GetMotionType(void) const { return m_motiontype; }
-	int GetBlendMotionType(void) const { return m_motiontypeBlend; }
-	void Debug(void);
-
+	int GetMotionType(void) const { return m_nType; }
+	int GetBlendMotionType(void) const { return m_nTypeBlend; }
+	bool IsIventFrame(const int nStartFrame, const int nEndFrame, const int nType);
 private:
-	bool LoadModel(CModel** ppModel, const int nMaxSize, int nCnt, string input, string line, CMotion* pMotion);
-	bool LoadCharacterSet(CModel** ppModel, string line, string input, CMotion* pMotion);
-	void LoadMotionSet(CMotion* pMotion, ifstream& File, string nowLine,const int nNumMotion);
 	void UpdateCurrentMotion(CModel** pModel, int nIdx);
 	void UpdateBlendMotion(CModel** pModel, int nIdx);
-	istringstream SetInputvalue(string input);
 	void FinishFirstBlend(void);
 
-	Motion_Info *m_apMotionInfo;		// モーション情報へのポインタ
-	int m_motiontype;					// モーションの種類
-	int m_nNumKey;						// キーの総数
-	int m_nNumModel;					// モデルの最大数
-	int m_nKey;							// 現在のキーNo.
-	int m_nCountMotion;					// モーションのカウンター
-	int m_nextKey;						// 次のキー
-	int m_nNumMotion;					// モーションの総数
-	bool m_bLoopMotion;					// ループするかどうか
+	CMotionLoader* m_pLoader;   // モーションのローダー
+	vector<Info> m_aInfo;		// モーション情報へのポインタ
+	int m_nType;				// モーションの種類
+	int m_nNumKey;				// キーの総数
+	int m_nKey;					// 現在のキーNo.
+	int m_nCount;				// モーションのカウンター
+	int m_nextKey;				// 次のキー
+	int m_nAllFrame;			// 全体のフレーム数
+	int m_nAllCounter;			// 全体フレームのカウンター
+	bool m_bLoopMotion;				// ループするかどうか
 
-	bool m_bBlendMotion;				// ブレンドがあるかどうか
-	bool m_bLoopMotionBlend;			// ループするかどうか
-	bool m_bFinishMotion;				// モーションが終わったかどうか
-	bool m_bFirstMotion;                // モーションが始まったフラグ
+	bool m_bBlend;						// ブレンドがあるかどうか
+	bool m_bLoopBlend;					// ループするかどうか
+	bool m_bFinish;						// モーションが終わったかどうか
+	bool m_bFirst;						// モーションが始まったフラグ
 
-	int m_motiontypeBlend;				// ブレンドの種類
+	int m_nTypeBlend;					// ブレンドの種類
 	int m_nFrameBlend;					// ブレンドのフレーム数
 	int m_nCounterBlend;				// ブレンドカウンター
 	int m_nNumKeyBlend;					// ブレンドモーションの最大のキー
@@ -116,24 +122,39 @@ private:
 };
 
 //***************************************************
-// モーションのマネージャクラスの定義
+// モーションのロードクラスの定義
 //***************************************************
-class CMotionManager
+class CMotionLoader
 {
 public:
-	typedef enum
-	{
-		CATEGORY_PLAYER = 0,
-		CATEGORY_MAX
-	}CATEGORY;
 
-	CMotionManager();
-	~CMotionManager();
+	CMotionLoader();
+	~CMotionLoader();
 
-	static CMotion::Motion_Info* CreateMotionInfo(const int nNumMotion);
-	static CMotion::Key_Info *CreateKeyInfo(const int nNumKey);
-	static CMotion::Key* CreateKey(const int nNumModel);
+	void SetNumModel(const int nNumModel) { m_nNumModel = nNumModel; }
+	void SetNumMotion(const int nNumMotion) { m_nNumMotion = nNumMotion; }
 
+	int GetNumModel(void) const { return m_nNumModel; }
+	int GetNumMotion(void) const { return m_nNumMotion; }
+
+protected:
+	vector<CMotion::Info> m_aInfo;  // モーションの情報
 private:
+	int m_nNumModel;				// モデルの最大数
+	int m_nNumMotion;				// モーションの総数
+};
+
+//***************************************************
+// モーションのロードクラス(textFile)の定義
+//***************************************************
+class CLoderText : public CMotionLoader
+{
+public:
+	static CLoderText* LoadTextFile(const char* pFileName, vector<CMotion::Info>& Info, CModel** ppModel, int* OutNumModel, const int nMaxSize, const int nNumMotion);
+private:
+	bool LoadModel(CModel** ppModel, const int nMaxSize, int nCnt, string input, string line);
+	bool LoadCharacterSet(CModel** ppModel, string line, string input);
+	void LoadMotionSet(CLoderText* pLoader, ifstream& File, string nowLine, const int nNumMotion);
+	istringstream SetInputvalue(string input);
 };
 #endif

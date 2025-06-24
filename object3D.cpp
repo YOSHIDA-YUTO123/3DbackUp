@@ -20,9 +20,9 @@ CObject3D::CObject3D()
 	memset(m_mtxWorld, NULL, sizeof(D3DXMATRIX));
 	m_pos = VEC3_NULL;
 	m_pVtxBuffer = NULL;
-m_rot = VEC3_NULL;
-m_Size = VEC3_NULL;
-m_nTextureIdx = NULL;
+	m_rot = VEC3_NULL;
+	m_Size = VEC3_NULL;
+	m_nTextureIdx = NULL;
 }
 
 //===================================================
@@ -75,64 +75,64 @@ void CObject3D::Uninit(void)
 //===================================================
 void CObject3D::Update(void)
 {
-	CPlayer* pPlayer = CManager::GetPlayer();
+	//CPlayer* pPlayer = CManager::GetPlayer();
 
-	D3DXVECTOR3 PlayerPos = pPlayer->GetPosition();
+	//D3DXVECTOR3 PlayerPos = pPlayer->GetPosition();
 
-	// 頂点情報のポインタ
-	VERTEX_3D* pVtx;
+	//// 頂点情報のポインタ
+	//VERTEX_3D* pVtx;
 
-	// 頂点バッファのロック
-	m_pVtxBuffer->Lock(0, 0, (void**)&pVtx, 0);
+	//// 頂点バッファのロック
+	//m_pVtxBuffer->Lock(0, 0, (void**)&pVtx, 0);
 
-	D3DXVECTOR3 nor, vec1, vec2;
-	float fHeight = 0.0f;
+	//D3DXVECTOR3 nor, vec1, vec2;
+	//float fHeight = 0.0f;
 
-	vec1 = pVtx[2].pos - pVtx[0].pos;
-	vec2 = pVtx[1].pos - pVtx[0].pos;
-	D3DXVec3Cross(&nor, &vec2, &vec1);
-	D3DXVec3Normalize(&nor, &nor);
+	//vec1 = pVtx[2].pos - pVtx[0].pos;
+	//vec2 = pVtx[1].pos - pVtx[0].pos;
+	//D3DXVec3Cross(&nor, &vec2, &vec1);
+	//D3DXVec3Normalize(&nor, &nor);
 
-	D3DXVECTOR3 vec3, vec4, vec5;
+	//D3DXVECTOR3 vec3, vec4, vec5;
 
-	vec3 = pVtx[0].pos - pVtx[2].pos;
-	vec4 = pVtx[1].pos - pVtx[0].pos;
-	vec5 = pVtx[2].pos - pVtx[1].pos;
+	//vec3 = pVtx[0].pos - pVtx[2].pos;
+	//vec4 = pVtx[1].pos - pVtx[0].pos;
+	//vec5 = pVtx[2].pos - pVtx[1].pos;
 
-	D3DXVec3Normalize(&vec3, &vec3);
-	D3DXVec3Normalize(&vec4, &vec4);
-	D3DXVec3Normalize(&vec5, &vec5);
+	//D3DXVec3Normalize(&vec3, &vec3);
+	//D3DXVec3Normalize(&vec4, &vec4);
+	//D3DXVec3Normalize(&vec5, &vec5);
 
-	D3DXVECTOR3 vecP0, vecP1, vecP2;
+	//D3DXVECTOR3 vecP0, vecP1, vecP2;
 
-	vecP0 = PlayerPos - pVtx[2].pos;
-	vecP1 = PlayerPos - pVtx[0].pos;
-	vecP2 = PlayerPos - pVtx[1].pos;
+	//vecP0 = PlayerPos - pVtx[2].pos;
+	//vecP1 = PlayerPos - pVtx[0].pos;
+	//vecP2 = PlayerPos - pVtx[1].pos;
 
-	D3DXVec3Normalize(&vecP0, &vecP0);
-	D3DXVec3Normalize(&vecP1, &vecP1);
-	D3DXVec3Normalize(&vecP2, &vecP2);
+	//D3DXVec3Normalize(&vecP0, &vecP0);
+	//D3DXVec3Normalize(&vecP1, &vecP1);
+	//D3DXVec3Normalize(&vecP2, &vecP2);
 
-	D3DXVECTOR3 cross0, cross1, cross2;
+	//D3DXVECTOR3 cross0, cross1, cross2;
 
-	D3DXVec3Cross(&cross0, &vec3, &vecP0);
-	D3DXVec3Cross(&cross1, &vec4, &vecP1);
-	D3DXVec3Cross(&cross2, &vec5, &vecP2);
+	//D3DXVec3Cross(&cross0, &vec3, &vecP0);
+	//D3DXVec3Cross(&cross1, &vec4, &vecP1);
+	//D3DXVec3Cross(&cross2, &vec5, &vecP2);
 
-	if (cross0.y >= 0.0f && cross1.y >= 0.0f && cross2.y >= 0.0f)
-	{
-		if (nor.y != 0.0f)
-		{
-			float xz = ((PlayerPos.x - pVtx[0].pos.x) * nor.x + (PlayerPos.z - pVtx[0].pos.z) * nor.z);
+	//if (cross0.y >= 0.0f && cross1.y >= 0.0f && cross2.y >= 0.0f)
+	//{
+	//	if (nor.y != 0.0f)
+	//	{
+	//		float xz = ((PlayerPos.x - pVtx[0].pos.x) * nor.x + (PlayerPos.z - pVtx[0].pos.z) * nor.z);
 
-			fHeight = pVtx[0].pos.y - (xz / nor.y);
+	//		fHeight = pVtx[0].pos.y - (xz / nor.y);
 
-			pPlayer->SetPosition(D3DXVECTOR3(PlayerPos.x,m_pos.y + fHeight, PlayerPos.z));
-		}
-	}
+	//		pPlayer->SetPosition(D3DXVECTOR3(PlayerPos.x,m_pos.y + fHeight, PlayerPos.z));
+	//	}
+	//}
 
-	// 頂点バッファのアンロック
-	m_pVtxBuffer->Unlock();
+	//// 頂点バッファのアンロック
+	//m_pVtxBuffer->Unlock();
 }
 
 //===================================================
@@ -140,8 +140,11 @@ void CObject3D::Update(void)
 //===================================================
 void CObject3D::Draw(void)
 {
+	// レンダラーの取得
+	CRenderer* pRenderer = CManager::GetRenderer();
+
 	// デバイスの取得
-	LPDIRECT3DDEVICE9 pDevice = CManager::GetRenderer()->GetDevice();
+	LPDIRECT3DDEVICE9 pDevice = pRenderer->GetDevice();
 
 	// テクスチャクラスの取得
 	CTextureManager* pTexture = CManager::GetTexture();
@@ -174,6 +177,34 @@ void CObject3D::Draw(void)
 
 	// ポリゴンの描画
 	pDevice->DrawPrimitive(D3DPT_TRIANGLESTRIP, 0, 2);
+}
+
+//===================================================
+// 描画に必要な情報だけの描画処理
+//===================================================
+void CObject3D::SetDraw(void)
+{
+	// レンダラーの取得
+	CRenderer* pRenderer = CManager::GetRenderer();
+
+	// デバイスの取得
+	LPDIRECT3DDEVICE9 pDevice = pRenderer->GetDevice();
+
+	// テクスチャクラスの取得
+	CTextureManager* pTexture = CManager::GetTexture();
+
+	// 頂点バッファをデータストリームに設定
+	pDevice->SetStreamSource(0, m_pVtxBuffer, 0, sizeof(VERTEX_3D));
+
+	//頂点フォーマットの設定
+	pDevice->SetFVF(FVF_VERTEX_3D);
+
+	// テクスチャ設定
+	pDevice->SetTexture(0, pTexture->GetAdress(m_nTextureIdx));
+
+	// ポリゴンの描画
+	pDevice->DrawPrimitive(D3DPT_TRIANGLESTRIP, 0, 2);
+
 }
 
 //===================================================
@@ -220,6 +251,63 @@ void CObject3D::SetOffsetVtx(const D3DXCOLOR col, const int nPosX, const int nPo
 	pVtx[1].tex = D3DXVECTOR2(1.0f / nPosX, 0.0f);
 	pVtx[2].tex = D3DXVECTOR2(0.0f, 1.0f / nPosY);
 	pVtx[3].tex = D3DXVECTOR2(1.0f / nPosX, 1.0f / nPosY);
+
+	// 頂点バッファのアンロック
+	m_pVtxBuffer->Unlock();
+}
+
+//===================================================
+// テクスチャのIDの設定
+//===================================================
+void CObject3D::SetTextureID(const char* pTextureName)
+{
+	// テクスチャクラスの取得
+	CTextureManager* pTexture = CManager::GetTexture();
+
+	// テクスチャの名前の設定
+	m_nTextureIdx = pTexture->Register(pTextureName);
+}
+
+//===================================================
+// 位置の更新処理
+//===================================================
+void CObject3D::UpdatePosition(const D3DXVECTOR3 pos,const D3DXVECTOR3 Size)
+{
+	// 頂点情報のポインタ
+	VERTEX_3D* pVtx;
+
+	m_pos = pos;
+	m_Size = Size;
+
+	// 頂点バッファのロック
+	m_pVtxBuffer->Lock(0, 0, (void**)&pVtx, 0);
+
+	// 頂点座標の設定
+	pVtx[0].pos = D3DXVECTOR3(-m_Size.x, m_Size.y, m_Size.z);
+	pVtx[1].pos = D3DXVECTOR3(m_Size.x, m_Size.y, m_Size.z);
+	pVtx[2].pos = D3DXVECTOR3(-m_Size.x, -m_Size.y, -m_Size.z);
+	pVtx[3].pos = D3DXVECTOR3(m_Size.x, -m_Size.y, -m_Size.z);
+
+	// 頂点バッファのアンロック
+	m_pVtxBuffer->Unlock();
+}
+
+//===================================================
+// 色の更新処理
+//===================================================
+void CObject3D::UpdateCol(const D3DXCOLOR col)
+{
+	// 頂点情報のポインタ
+	VERTEX_3D* pVtx;
+	
+	// 頂点バッファのロック
+	m_pVtxBuffer->Lock(0, 0, (void**)&pVtx, 0);
+
+	// 頂点カラーの設定
+	pVtx[0].col = col;
+	pVtx[1].col = col;
+	pVtx[2].col = col;
+	pVtx[3].col = col;
 
 	// 頂点バッファのアンロック
 	m_pVtxBuffer->Unlock();

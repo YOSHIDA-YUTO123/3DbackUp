@@ -101,5 +101,9 @@ namespace math
 	float GetDistance(const D3DXVECTOR3 diff);
 	D3DXVECTOR3 GetTargetDir(const D3DXVECTOR3 dest, const D3DXVECTOR3 pos);
 	float GetTargetAngle(const D3DXVECTOR3 dest, const D3DXVECTOR3 pos);
+	D3DXVECTOR3 GetPositionFromMatrix(const D3DXMATRIX mtxWorld);
+	D3DXQUATERNION CreateQuaternion(D3DXQUATERNION* pOut, D3DXVECTOR3 axis, float fAngle);
+	D3DXMATRIX SetMatrixRotationQuaternion(D3DXMATRIX* pOut, D3DXQUATERNION quaternion);
+	D3DXVECTOR3 MatrixToEulerXYZ(const D3DXMATRIX mtxWorld);
 }
 #endif

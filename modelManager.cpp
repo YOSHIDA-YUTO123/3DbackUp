@@ -123,7 +123,81 @@ DWORD CModelManager::GetNumMat(int nIdx)
 		return 0;
 	}
 
-	return m_apModelInfo[nIdx].dwNumMat;}
+	return m_apModelInfo[nIdx].dwNumMat;
+}
+
+//==============================================
+// 大きさの取得
+//==============================================
+D3DXVECTOR3 CModelManager::GetSize(int nIdx)
+{
+	if (nIdx < 0 || nIdx >= MAX_MODEL)
+	{
+		return VEC3_NULL;
+	}
+
+	// 頂点座標の取得
+	int nNumVtx;	// 頂点数
+	DWORD sizeFVF;  // 頂点フォーマットのサイズ
+	BYTE* pVtxBuff; // 頂点バッファへのポインタ
+
+	// 頂点数の取得
+	nNumVtx = m_apModelInfo[nIdx].pMesh->GetNumVertices();
+
+	// 頂点フォーマットのサイズ取得
+	sizeFVF = D3DXGetFVFVertexSize(m_apModelInfo[nIdx].pMesh->GetFVF());
+
+	// 頂点バッファのロック
+	m_apModelInfo[nIdx].pMesh->LockVertexBuffer(D3DLOCK_READONLY, (void**)&pVtxBuff);
+
+	for (int nCntVtx = 0; nCntVtx < nNumVtx; nCntVtx++)
+	{
+		// 頂点座標の代入
+		D3DXVECTOR3 vtx = *(D3DXVECTOR3*)pVtxBuff;
+
+		// 頂点座標を比較してブロックの最小値,最大値を取得
+		if (vtx.x < m_apModelInfo[nIdx].vtxMin.x)
+		{
+			m_apModelInfo[nIdx].vtxMin.x = vtx.x;
+		}
+		else if (vtx.y < m_apModelInfo[nIdx].vtxMin.y)
+		{
+			m_apModelInfo[nIdx].vtxMin.y = vtx.y;
+		}
+		else if (vtx.z < m_apModelInfo[nIdx].vtxMin.z)
+		{
+			m_apModelInfo[nIdx].vtxMin.z = vtx.z;
+		}
+		else if (vtx.x > m_apModelInfo[nIdx].vtxMax.x)
+		{
+			m_apModelInfo[nIdx].vtxMax.x = vtx.x;
+		}
+		else if (vtx.y > m_apModelInfo[nIdx].vtxMax.y)
+		{
+			m_apModelInfo[nIdx].vtxMax.y = vtx.y;
+		}
+		else if (vtx.z > m_apModelInfo[nIdx].vtxMax.z)
+		{
+			m_apModelInfo[nIdx].vtxMax.z = vtx.z;
+		}
+
+		// 頂点フォーマットのサイズ分ポインタを進める
+		pVtxBuff += sizeFVF;
+	}
+
+	// 大きさ
+	D3DXVECTOR3 Size = VEC3_NULL;
+
+	// サイズに代入
+	Size.x = m_apModelInfo[nIdx].vtxMax.x - m_apModelInfo[nIdx].vtxMin.x;
+	Size.y = m_apModelInfo[nIdx].vtxMax.y - m_apModelInfo[nIdx].vtxMin.y;
+	Size.z = m_apModelInfo[nIdx].vtxMax.z - m_apModelInfo[nIdx].vtxMin.z;
+
+	// 頂点バッファのアンロック
+	m_apModelInfo[nIdx].pMesh->UnlockVertexBuffer();
+
+	return Size;
+}
 
 //==============================================
 // すべてのxFileのロード処理

@@ -19,8 +19,8 @@
 //===================================================
 CCharacter3D::CCharacter3D(int nPriority) : CObject(nPriority)
 {
-	m_pos = VEC3_NULL;
-	m_rot = VEC3_NULL;
+	memset(&m_pos, NULL, sizeof(m_pos));
+	memset(&m_rot, NULL, sizeof(m_rot));
 	memset(m_mtxWorld, NULL, sizeof(m_mtxWorld));
 	m_nLife = NULL;
 	m_rotDest = VEC3_NULL;

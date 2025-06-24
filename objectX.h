@@ -36,6 +36,7 @@ public:
 	void Uninit(void);
 	void Update(void);
 	void Draw(void);
+	void Draw(const float Diffuse);
 	void DrawShadow(void);
 
 	HRESULT LoadModel(const char* pXFileName);

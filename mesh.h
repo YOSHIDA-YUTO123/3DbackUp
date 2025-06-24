@@ -46,12 +46,12 @@ public:
 	void SetTextureID(const char* pTextureName = NULL);
 	void SetVtxElement(const int vertex,const int polygon,const int index);
 	void SetSegment(const int nSegX, const int nSegZ);
+
 	D3DXVECTOR3 GetVtxPos(const int nIdx);
 	int GetIndex(const int nIdx);
 	void SetVtxPos(const D3DXVECTOR3 pos, const int nIdx);
 	void SetNormal(const D3DXVECTOR3 nor, const int nIdx);
-	LPDIRECT3DVERTEXBUFFER9 GetBuffer(void) const { return m_pVtxBuffMesh; }
-
+	void SetColor(const D3DXCOLOR col, const int nIdx);
 private:
 	LPDIRECT3DVERTEXBUFFER9 m_pVtxBuffMesh; // 頂点バッファへのポインタ
 	LPDIRECT3DINDEXBUFFER9 m_pIdxBuffMesh;  // インデックスバッファへのポインタ

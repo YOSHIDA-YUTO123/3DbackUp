@@ -35,6 +35,7 @@ CCamera::CCamera()
 	m_posVDest = VEC3_NULL;
 	m_vecU = VEC3_NULL;
 	m_fDistance = NULL;
+	m_state = STATE_NONE;
 }
 
 //===================================================
@@ -49,7 +50,7 @@ CCamera::~CCamera()
 //===================================================
 HRESULT CCamera::Init(void)
 {
-	m_posV = D3DXVECTOR3(0.0f, 590.0f, -1403.0f);		// 視点
+	m_posV = D3DXVECTOR3(0.0f, 590.0f, -500.0f);		// 視点
 
 	m_rot = D3DXVECTOR3(D3DX_PI * 0.65f, 0.0f, 0.0f);	// 角度
 
@@ -66,6 +67,8 @@ HRESULT CCamera::Init(void)
 	m_posR.z = m_posV.z + sinf(m_rot.x) * cosf(m_rot.y) * m_fDistance;
 
 	m_vecU = D3DXVECTOR3(0.0f, 1.0f, 0.0f);				// 上方向ベクトル
+
+	m_state = STATE_TRACKING;
 
 	return S_OK;
 }
@@ -84,21 +87,15 @@ void CCamera::Update(void)
 {
 	// マウスの視点移動
 	MouseView();
-
-	float fRotX = m_posV.x - m_posR.x;
-	float fRotY = m_posV.y - m_posR.y;
-	float fRotZ = m_posV.z - m_posR.z;
-
-	m_fDistance = sqrtf((fRotX * fRotX) + (fRotY * fRotY) + (fRotZ * fRotZ));
+#if 0
 
 	// プレイヤーの取得
 	CPlayer* pPlayer = CManager::GetPlayer();
 
 	// プレイヤーの取得
-	D3DXVECTOR3 playerPos(pPlayer->GetPosition().x, pPlayer->GetPosition().y + 400.0f, pPlayer->GetPosition().z);
+	D3DXVECTOR3 playerPos(pPlayer->GetPosition().x, pPlayer->GetPosition().y + 200.0f, pPlayer->GetPosition().z);
 	D3DXVECTOR3 playerRot = pPlayer->GetRotation();
 
-#if 0
 	m_posRDest.x = playerPos.x + sinf(playerRot.y) * 1.0f;
 	m_posRDest.y = playerPos.y + sinf(playerRot.y) * 1.0f;
 	m_posRDest.z = playerPos.z + cosf(playerRot.y) * 1.0f;
@@ -107,12 +104,12 @@ void CCamera::Update(void)
 	m_posVDest.y = playerPos.y - cosf(m_rot.y) * m_fDistance;
 	m_posVDest.z = playerPos.z - cosf(m_rot.y) * m_fDistance;
 
-	m_posR.x += ((m_posRDest.x - m_posR.x) * 0.2f);
-	m_posR.y += ((m_posRDest.y - m_posR.y) * 0.2f);
-	m_posR.z += ((m_posRDest.z - m_posR.z) * 0.2f);
+	m_posR.x += ((m_posRDest.x - m_posR.x) * 0.07f);
+	m_posR.y += ((m_posRDest.y - m_posR.y) * 0.07f);
+	m_posR.z += ((m_posRDest.z - m_posR.z) * 0.07f);
 
-	m_posV.x += ((m_posVDest.x - m_posV.x) * 0.2f);
-	m_posV.z += ((m_posVDest.z - m_posV.z) * 0.2f);
+	m_posV.x += ((m_posVDest.x - m_posV.x) * 0.07f);
+	m_posV.z += ((m_posVDest.z - m_posV.z) * 0.07f);
 
 #endif
 
@@ -191,6 +188,8 @@ void CCamera::MouseWheel(void)
 //===================================================
 void CCamera::MouseView(void)
 {
+	if (m_state == STATE_ROCKON) return;
+
 	// マウスの取得
 	CInputMouse* pMouse = CManager::GetInputMouse();
 
@@ -273,6 +272,7 @@ void CCamera::PadView(void)
 			float NormalizeY = RStickAngleY / fMag;
 
 			float fAngle = fMag * 0.000003f;
+
 			m_rot.y += NormalizeX * 0.5f * fAngle;
 			m_rot.x -= NormalizeY * 0.5f * fAngle;
 		}
@@ -282,4 +282,73 @@ void CCamera::PadView(void)
 	m_posV.x = m_posR.x - sinf(m_rot.x) * sinf(m_rot.y) * m_fDistance;
 	m_posV.y = m_posR.y - cosf(m_rot.x) * m_fDistance;
 	m_posV.z = m_posR.z - sinf(m_rot.x) * cosf(m_rot.y) * m_fDistance;
+}
+
+//===================================================
+// カメラの追従処理
+//===================================================
+void CCamera::SetTracking(const D3DXVECTOR3 posRDest, const float fSpeed, const float fcoef)
+{
+	if (m_state != STATE_TRACKING) return;
+
+	// プレイヤーの取得
+	CPlayer* pPlayer = CManager::GetPlayer();
+
+	// プレイヤーの取得
+	D3DXVECTOR3 playerPos(pPlayer->GetPosition().x, pPlayer->GetPosition().y + 200.0f, pPlayer->GetPosition().z);
+	D3DXVECTOR3 playerRot = pPlayer->GetRotation();
+
+	m_posRDest.x = posRDest.x * 1.0f;
+	m_posRDest.y = posRDest.y * 1.0f;
+	m_posRDest.z = posRDest.z * 1.0f;
+
+	m_posVDest.x = playerPos.x - sinf(m_rot.y) * m_fDistance;
+	m_posVDest.y = playerPos.y - cosf(m_rot.y) * m_fDistance;
+	m_posVDest.z = playerPos.z - cosf(m_rot.y) * m_fDistance;
+
+	m_posR.x += ((m_posRDest.x - m_posR.x) * fcoef);
+	m_posR.y += ((m_posRDest.y - m_posR.y) * fcoef);
+	m_posR.z += ((m_posRDest.z - m_posR.z) * fcoef);
+
+	m_posV.x += ((m_posVDest.x - m_posV.x) * fcoef);
+	m_posV.z += ((m_posVDest.z - m_posV.z) * fcoef);
+}
+
+//===================================================
+// ロックオン処理
+//===================================================
+void CCamera::Rockon(D3DXVECTOR3 playerPos, D3DXVECTOR3 enemyPos)
+{
+	if (m_state != STATE_ROCKON) return;
+
+	D3DXVECTOR3 dir = playerPos - enemyPos;
+
+	float fAngle = atan2f(dir.x, dir.z) + D3DX_PI;
+
+	D3DXVECTOR3 posR;
+	posR.x = enemyPos.x;
+	posR.y = enemyPos.y;
+	posR.z = enemyPos.z;
+
+	m_posRDest = posR;
+
+	m_rot.y = fAngle;
+		
+	dir.y = 0.0f; 
+
+	D3DXVec3Normalize(&dir, &dir);
+
+	dir *= m_fDistance;
+
+	dir.y = playerPos.y + 200.0f;
+
+	m_posVDest = playerPos + dir;
+
+	m_posR.x += ((m_posRDest.x - m_posR.x) * 0.07f);
+	m_posR.y += ((m_posRDest.y - m_posR.y) * 0.07f);
+	m_posR.z += ((m_posRDest.z - m_posR.z) * 0.07f);
+
+	m_posV.x += ((m_posVDest.x - m_posV.x) * 0.07f);
+	m_posV.y += ((m_posVDest.y - m_posV.y) * 0.07f);
+	m_posV.z += ((m_posVDest.z - m_posV.z) * 0.07f);
 }

@@ -354,6 +354,22 @@ void CMesh::SetNormal(const D3DXVECTOR3 nor, const int nIdx)
 }
 
 //================================================
+// 色の設定
+//================================================
+void CMesh::SetColor(const D3DXCOLOR col,const int nIdx)
+{
+	VERTEX_3D* pVtx = NULL;
+
+	// 頂点バッファをロック
+	m_pVtxBuffMesh->Lock(0, 0, (void**)&pVtx, 0);
+
+	pVtx[nIdx].col = col;
+
+	// 頂点バッファをアンロック
+	m_pVtxBuffMesh->Unlock();
+}
+
+//================================================
 // 法線の正規化処理
 //================================================
 D3DXVECTOR3 CMesh::NormalizeNormal(const int nIdx)

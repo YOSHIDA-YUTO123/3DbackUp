@@ -13,10 +13,18 @@
 #include"manager.h"
 #include"renderer.h"
 #include "math.h"
+#include"shadow.h"
+#include "dust.h"
+#include"explosion.h"
+#include "impact.h"
 
 //***************************************************
 // マクロ定義
 //***************************************************
+#define SHADOW_A_LEVEL (0.9f)		// 影のアルファ値
+#define SHADOW_SIZE (300.0f)		// 影の大きさ
+#define SHADOW_MAX_HEIGHT (500.0f)	// 影が見える最大の高さ
+#define NUM_DUST (16)				// 瓦礫を出す数
 
 using namespace math;
 
@@ -31,6 +39,8 @@ CEnemy::CEnemy(int nPriority) : CCharacter3D(nPriority)
 	m_nNumModel = NULL;
 	m_pMotion = nullptr;
 	m_pAI = nullptr;
+	m_pShadow = nullptr;
+	D3DXMatrixIdentity(&m_weponMatrix);
 }
 
 //===================================================
@@ -83,13 +93,16 @@ CEnemy* CEnemy::Create(const D3DXVECTOR3 pos, const D3DXVECTOR3 rot)
 //===================================================
 HRESULT CEnemy::Init(void)
 {
-	m_pMotion = CMotion::Load("data/MOTION/motionEnemy000.txt", &m_apModel[0], ENEMY_MAX_PARTS, &m_nNumModel, MOTIONTYPE_MAX);
+	m_pMotion = CMotion::Load("data/MOTION/motionEnemy000.txt", &m_apModel[0], ENEMY_MAX_PARTS, &m_nNumModel, MOTIONTYPE_MAX,CMotion::LOAD_TEXT);
 
 	// 敵のAIの生成
 	m_pAI = new CEnemyAI;
 
 	// 敵のAI初期化処理
 	m_pAI->Init(m_pMotion);
+
+	// 影の取得生成
+	m_pShadow = CShadow::Create(GetPosition(), 100.0f, 100.0f, D3DXCOLOR(1.0f, 1.0f, 1.0f, SHADOW_A_LEVEL));
 
 	return S_OK;
 }
@@ -137,7 +150,11 @@ void CEnemy::Uninit(void)
 //===================================================
 void CEnemy::Update(void)
 {
+	// プレイヤーの取得
 	CPlayer* pPlayer = CManager::GetPlayer();
+
+	// カメラの取得処理
+	CCamera* pCamera = CManager::GetCamera();
 
 	D3DXVECTOR3 pos = GetPosition();
 
@@ -152,9 +169,30 @@ void CEnemy::Update(void)
 	// メッシュフィールドの取得
 	CMeshField* pMesh = CManager::GetMeshField();
 
-	pMesh->Collision(&pos);
+	float fHeight = 0.0f;
+
+	if (pMesh->Collision(pos, &fHeight))
+	{
+		pos.y = fHeight;
+	}
 	
 	m_move.y += -MAX_GLABITY;
+
+	if (m_pShadow != nullptr)
+	{
+		pMesh = CManager::GetMeshField();
+
+		D3DXVECTOR3 FieldNor = pMesh->GetNor(); 		   // 地面の法線ベクトルの取得
+		D3DXVECTOR3 VecU = D3DXVECTOR3(0.0f, 1.0f, 0.0f);  // 上方向ベクトルの作成
+
+		// 地面の角度に合わせた角度を取得
+		D3DXVECTOR3 rot = m_pShadow->GetFieldAngle(FieldNor, VecU);
+
+		// 影の設定処理
+		m_pShadow->Setting(D3DXVECTOR3(pos.x, pos.y - fHeight, pos.z), D3DXVECTOR3(pos.x, fHeight + 5.0f, pos.z), SHADOW_SIZE, SHADOW_SIZE, SHADOW_MAX_HEIGHT, SHADOW_A_LEVEL);
+
+		m_pShadow->SetRotaition(rot);
+	}
 
 	if (m_pMotion != nullptr)
 	{
@@ -164,18 +202,18 @@ void CEnemy::Update(void)
 		if (m_pAI != nullptr && m_pAI->Wait() == false)
 		{
 			// 一定の距離にいたら
-			if (m_pAI->CheckDistance(PlayerPos, pos, 1000.0f) == MOTIONTYPE_MOVE)
+			if (m_pAI->CheckDistance(PlayerPos, pos, 1000.0f) == CEnemyAI::ACTION_MOVE)
 			{
 				m_pMotion->SetMotion(MOTIONTYPE_MOVE, true, 10);
 			}
 			// いなかったら
-			else if (m_pAI->CheckDistance(PlayerPos, pos, 1000.0f) == MOTIONTYPE_NEUTRAL)
+			else if (m_pAI->CheckDistance(PlayerPos, pos, 1000.0f) == CEnemyAI::ACTION_IDLE)
 			{
 				m_pMotion->SetMotion(MOTIONTYPE_NEUTRAL, true, 10);
 			}
 
 			// 攻撃可能だったら
-			if (m_pAI->IsAttack() == MOTIONTYPE_ACTION)
+			if (m_pAI->IsAttack() == CEnemyAI::ACTION_ATTACK)
 			{
 				m_pMotion->SetMotion(MOTIONTYPE_ACTION, true, 10);
 
@@ -194,12 +232,50 @@ void CEnemy::Update(void)
 		m_pMotion->Update(&m_apModel[0], m_nNumModel);
 	}
 
+	D3DXVECTOR3 modelpos = GetPositionFromMatrix(m_weponMatrix);
+
+	// 攻撃モーションのたたきつけになったら
+	if (m_pMotion->IsIventFrame(72,72,MOTIONTYPE_ACTION))
+	{
+		// 地面に波を発生させる
+		pMesh->SetWave(modelpos, 120, 15.0f, 20.0f, 300.0f, 380.0f, 0.01f);
+
+		// 瓦礫の数分出す
+		for (int nCnt = 0; nCnt < NUM_DUST; nCnt++)
+		{
+			// 分割に応じた方向を求める
+			float fAngle = (D3DX_PI * 2.0f) / NUM_DUST * nCnt;
+
+			// 吹っ飛び量を選出
+			float dir = rand() % 15 + 5.0f;
+			float Jump = rand() % 15 + 25.0f;
+
+			// 方向に応じた吹っ飛び量を計算
+			float fMoveX = sinf(fAngle) * dir;
+			float fMoveZ = cosf(fAngle) * dir;
+
+			// 寿命を選出
+			int nLife = rand() % 120 + 60;
+
+			// 瓦礫を生成
+			CDust::Create(modelpos, D3DXVECTOR3(fMoveX, Jump, fMoveZ), nLife);
+		}
+	}
+
 	// モーションの遷移
 	TransitionMotion();
 
+	// 位置の設定処理
 	SetPosition(pos);
 
+	// スムーズな角度の変更
 	SmoothAngle(0.1f);
+
+	D3DXVECTOR3 modelPos = math::GetPositionFromMatrix(m_apModel[2]->GetMatrixWorld());
+
+	modelPos.y *= 0.5f;
+
+	pCamera->Rockon(pPlayer->GetPosition(), modelPos);
 }
 
 //===================================================
@@ -217,8 +293,12 @@ void CEnemy::Draw(void)
 			// 描画処理
 			m_apModel[nCnt]->Draw();
 
-			// モデルの影の描画処理
-			m_apModel[nCnt]->DrawShadow();
+			// モデルが武器だったら
+			if (nCnt == 15)
+			{
+				// 親子関係の設定処理
+				SetParent(nCnt);
+			}
 		}
 	}
 }
@@ -268,6 +348,45 @@ void CEnemy::TransitionMotion(void)
 	default:
 		break;
 	}
+}
+
+//===================================================
+// 親子関係の設定処理
+//===================================================
+void CEnemy::SetParent(const int nCnt)
+{
+	// デバイスの取得
+	LPDIRECT3DDEVICE9 pDevice = CManager::GetRenderer()->GetDevice();
+
+	//計算用のマトリックス
+	D3DXMATRIX mtxRot, mtxTrans, mtxParent;
+
+	//ワールドマトリックスの初期化
+	D3DXMatrixIdentity(&m_weponMatrix);
+
+	// 親の位置、向きの設定
+	D3DXVECTOR3 ParentPos = m_apModel[nCnt]->GetPosition();
+	D3DXVECTOR3 ParentRot = m_apModel[nCnt]->GetRotaition();
+
+	//向きを反映
+	D3DXMatrixRotationYawPitchRoll(&mtxRot, ParentRot.y, ParentRot.x, ParentRot.z);
+	D3DXMatrixMultiply(&m_weponMatrix, &m_weponMatrix, &mtxRot);
+
+	// 大きさの取得
+	D3DXVECTOR3 Size = m_apModel[nCnt]->GetSize();
+
+	//位置を反映
+	D3DXMatrixTranslation(&mtxTrans, ParentPos.x, ParentPos.y + Size.y, ParentPos.z);
+	D3DXMatrixMultiply(&m_weponMatrix, &m_weponMatrix, &mtxTrans);
+
+	// 親のワールドマトリックスの取得
+	pDevice->GetTransform(D3DTS_WORLD, &mtxParent);
+
+	// 親のワールドマトリックスと掛け合わせる
+	D3DXMatrixMultiply(&m_weponMatrix, &m_weponMatrix, &mtxParent);
+
+	// ワールドマトリックスの設定
+	pDevice->SetTransform(D3DTS_WORLD, &m_weponMatrix);
 }
 
 //===================================================
@@ -336,12 +455,12 @@ int CEnemyAI::CheckDistance(const D3DXVECTOR3 dest, const D3DXVECTOR3 pos,const 
 	{
 		m_Action = ACTION_MOVE;
 
-		return CEnemy::MOTIONTYPE_MOVE;
+		return ACTION_MOVE;
 	}
 
 	m_Action = ACTION_IDLE;
 
-	return CEnemy::MOTIONTYPE_NEUTRAL;
+	return ACTION_IDLE;
 }
 
 //===================================================
@@ -355,7 +474,7 @@ int CEnemyAI::IsAttack(void)
 
 	m_Action = ACTION_ATTACK;
 
-	return CEnemy::MOTIONTYPE_ACTION;
+	return ACTION_ATTACK;
 }
 
 //===================================================

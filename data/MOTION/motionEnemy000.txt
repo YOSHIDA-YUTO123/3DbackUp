@@ -45,7 +45,7 @@ CHARACTERSET
 	PARTSSET
 		INDEX = 0				# 
 		PARENT = -1				# (親)
-		POS = -0.00 750.00 0.00	# 位置
+		POS = -0.00 442.17 0.00	# 位置
 		ROT = 0.00 0.00 0.00	# 向き
 	END_PARTSSET
 
@@ -59,102 +59,103 @@ CHARACTERSET
 	PARTSSET
 		INDEX = 2				# 
 		PARENT = 1				# (親)
-		POS = 0.27 253.95 7.14	# 位置
+		POS = 0.27 150.39 7.14	# 位置
 		ROT = 0.00 0.00 0.00	# 向き
 	END_PARTSSET
 
 	PARTSSET
 		INDEX = 3				# 
 		PARENT = 1				# (親)
-		POS = -208.16 200.81 0.00	# 位置
+		POS = -120.41 125.50 0.00	# 位置
 		ROT = 0.00 0.00 0.00	# 向き
 	END_PARTSSET
 
 	PARTSSET
 		INDEX = 4				# 
 		PARENT = 3				# (親)
-		POS = -230.76 4.37 -9.78	# 位置
+		POS = -135.99 0.89 -9.78	# 位置
 		ROT = 0.00 0.00 0.00	# 向き
 	END_PARTSSET
 
 	PARTSSET
 		INDEX = 5				# 
 		PARENT = 4				# (親)
-		POS = -225.23 0.00 0.00	# 位置
+		POS = -131.05 2.43 0.00	# 位置
 		ROT = 0.00 0.00 0.00	# 向き
 	END_PARTSSET
 
 	PARTSSET
 		INDEX = 6				# 
 		PARENT = 1				# (親)
-		POS = 222.32 197.00 0.00	# 位置
+		POS = 130.54 125.50 0.00	# 位置
 		ROT = 0.00 0.00 0.00	# 向き
 	END_PARTSSET
 
 	PARTSSET
 		INDEX = 7				# 
 		PARENT = 6				# (親)
-		POS = 233.60 3.20 0.00	# 位置
+		POS = 135.58 0.80 0.00	# 位置
 		ROT = 0.00 0.00 0.00	# 向き
 	END_PARTSSET
 
 	PARTSSET
 		INDEX = 8				# 
 		PARENT = 7				# (親)
-		POS = 228.64 -3.42 0.00	# 位置
+		POS = 134.25 -3.42 0.00	# 位置
 		ROT = 0.00 0.00 0.00	# 向き
 	END_PARTSSET
 
 	PARTSSET
 		INDEX = 9				# 
 		PARENT = 0				# (親)
-		POS = -100.67 -207.19 0.00	# 位置
+		POS = -53.30 -118.61 0.00	# 位置
 		ROT = 0.00 0.00 0.00	# 向き
 	END_PARTSSET
 
 	PARTSSET
 		INDEX = 10				# 
 		PARENT = 9				# (親)
-		POS = -3.21 -226.21 0.90	# 位置
+		POS = -1.77 -133.00 0.90	# 位置
 		ROT = 0.00 0.00 0.00	# 向き
 	END_PARTSSET
 
 	PARTSSET
 		INDEX = 11				# 
 		PARENT = 10				# (親)
-		POS = 4.05 -265.28 18.00	# 位置
+		POS = 1.86 -154.70 2.31	# 位置
 		ROT = 0.00 0.00 0.00	# 向き
 	END_PARTSSET
 
 	PARTSSET
 		INDEX = 12				# 
 		PARENT = 0				# (親)
-		POS = 100.22 -205.19 0.00	# 位置
+		POS = 53.30 -118.13 0.00	# 位置
 		ROT = 0.00 0.00 0.00	# 向き
 	END_PARTSSET
 
 	PARTSSET
 		INDEX = 13				# 
 		PARENT = 12				# (親)
-		POS = -3.48 -227.08 0.66	# 位置
+		POS = -1.77 -132.58 0.66	# 位置
 		ROT = 0.00 0.00 0.00	# 向き
 	END_PARTSSET
 
 	PARTSSET
 		INDEX = 14				# 
 		PARENT = 13				# (親)
-		POS = 3.30 -265.12 20.10	# 位置
+		POS = 0.54 -156.16 2.31	# 位置
 		ROT = 0.00 0.00 0.00	# 向き
 	END_PARTSSET
 
 	PARTSSET
 		INDEX = 15				# 
 		PARENT = 5				# (親)
-		POS = -51.12 0.00 15.69	# 位置
+		POS = -26.91 0.00 15.69	# 位置
 		ROT = 0.00 0.00 0.00	# 向き
 	END_PARTSSET
 
 END_CHARACTERSET
+
 
 +=================================================================+
              モーションの情報  [ data/key_info.txt ]  
@@ -185,7 +186,7 @@ MOTIONSET
 		END_KEY
 
 		KEY # ----- [ 3 ] -----
-			POS = -17.01 46.41 0.00 
+			POS = -26.04 22.56 0.00 
 			ROT = 0.00 0.00 1.53 
 		END_KEY
 
@@ -200,7 +201,7 @@ MOTIONSET
 		END_KEY
 
 		KEY # ----- [ 6 ] -----
-			POS = 32.13 55.74 0.00 
+			POS = 33.96 37.32 0.00 
 			ROT = 0.21 0.15 -1.26 
 		END_KEY
 
@@ -268,7 +269,7 @@ MOTIONSET
 		END_KEY
 
 		KEY # ----- [ 3 ] -----
-			POS = -17.01 46.41 0.00 
+			POS = -21.21 27.33 0.00 
 			ROT = 0.00 0.00 1.53 
 		END_KEY
 
@@ -283,7 +284,7 @@ MOTIONSET
 		END_KEY
 
 		KEY # ----- [ 6 ] -----
-			POS = 32.13 55.74 0.00 
+			POS = 32.13 30.51 0.00 
 			ROT = 0.21 0.15 -1.26 
 		END_KEY
 
@@ -333,6 +334,7 @@ MOTIONSET
 		END_KEY
 	END_KEYSET
 END_MOTIONSET
+
 
 +=================================================================+
              モーションの情報  [ data/key_info.txt ]  
@@ -1028,7 +1030,7 @@ MOTIONSET
 	KEYSET			# --- << KEY : 2 / 5 >> ---
 		FRAME = 5
 		KEY # ----- [ 0 ] -----
-			POS = 0.00 -54.27 0.00 
+			POS = 0.00 -74.27 0.00 
 			ROT = -0.87 0.00 0.00 
 		END_KEY
 
@@ -1111,7 +1113,7 @@ MOTIONSET
 	KEYSET			# --- << KEY : 3 / 5 >> ---
 		FRAME = 90
 		KEY # ----- [ 0 ] -----
-			POS = 0.00 -134.27 0.00 
+			POS = 0.00 -50.00 0.00 
 			ROT = -1.26 0.00 0.00 
 		END_KEY
 
@@ -1194,7 +1196,7 @@ MOTIONSET
 	KEYSET			# --- << KEY : 4 / 5 >> ---
 		FRAME = 70
 		KEY # ----- [ 0 ] -----
-			POS = 0.00 -134.27 0.00 
+			POS = 0.00 -50.00 0.00 
 			ROT = -1.26 0.00 0.00 
 		END_KEY
 

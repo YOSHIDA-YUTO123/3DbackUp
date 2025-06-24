@@ -16,12 +16,20 @@
 #include"model.h"
 #include"renderer.h"
 #include "impact.h"
+#include"motion.h"
+#include"score.h"
+#include"shadow.h"
+#include "explosion.h"
+#include "dust.h"
 
 //***************************************************
 // マクロ定義
 //***************************************************
 #define PLAYER_JUMP_HEIGHT (25.0f)  // ジャンプ量
 #define MOVE_SPEED (10.5f)			// 移動速度
+#define SHADOW_SIZE (100.0f)		// 影の大きさ
+#define SHADOW_MAX_HEIGHT (500.0f)  // 影が見える最大の高さ
+#define SHADOW_A_LEVEL (0.9f)       // 影のアルファ値のオフセット
 
 //===================================================
 // コンストラクタ
@@ -35,6 +43,7 @@ CPlayer::CPlayer(int nPriority) : CCharacter3D(nPriority)
 	memset(m_apModel, NULL, sizeof(m_apModel));
 	m_nNumModel = NULL;
 	m_pMotion = nullptr;
+	m_bDash = false;
 }
 
 //===================================================
@@ -49,10 +58,13 @@ CPlayer::~CPlayer()
 //===================================================
 HRESULT CPlayer::Init(void)
 {
-	m_pMotion = CMotion::Load("data/MOTION/motionPlayer.txt", &m_apModel[0], NUM_PARTS, &m_nNumModel,MOTIONTYPE_MAX);
+	// モーションのロード処理
+	m_pMotion = CMotion::Load("data/MOTION/motionPlayer.txt", &m_apModel[0], NUM_PARTS, &m_nNumModel, MOTIONTYPE_MAX, CMotion::LOAD_TEXT);
 
 	// スコアの生成
 	m_pScore = (CScoreLerper*)CScore::Create(CScore::TYPE_LERPER,D3DXVECTOR3(1150.0f, 50.0f, 0.0f), 180.0f, 30.0f);
+
+	m_pShadow = CShadow::Create(VEC3_NULL, 50.0f, 50.0f, WHITE);
 
 	m_fSpeed = MOVE_SPEED;
 	return S_OK;
@@ -108,7 +120,11 @@ void CPlayer::Update(void)
 	// コントローラーの取得
 	CInputJoypad* pJoypad = CManager::GetInputJoypad();
 
+	// メッシュフィールドの取得
 	CMeshField* pMesh = CManager::GetMeshField();
+
+	// カメラの取得処理
+	CCamera* pCamera = CManager::GetCamera();
 
 	// 移動処理
 	if (pJoypad->GetJoyStickL() == true)
@@ -121,13 +137,25 @@ void CPlayer::Update(void)
 		// キーボードの移動処理
 		if(CPlayer::MoveKeyboard(pKeyboard))
 		{
-			int motiontype = m_bJump ? MOTIONTYPE_MOVE : MOTIONTYPE_JUMP;
+			// ダッシュモーションか歩きモーションかを判定
+			int isDashMotion = (m_bDash ? MOTIONTYPE_DASH : MOTIONTYPE_MOVE);
 
-			m_pMotion->SetMotion(motiontype, true, 15);
+			// ジャンプかjumpじゃないかを判定
+			int motiontype = m_bJump ? isDashMotion : MOTIONTYPE_JUMP;
+
+			// モーションの設定
+			m_pMotion->SetMotion(motiontype, true, 5);
 		}
 	}
 
-	
+	if (pKeyboard->GetPress(DIK_LSHIFT) || pJoypad->GetPress(pJoypad->JOYKEY_RIGHT_SHOULDER))
+	{
+		m_bDash = true;
+	}
+	else
+	{
+		m_bDash = false;
+	}
 	// 位置の取得
 	D3DXVECTOR3 pos = GetPosition();
 
@@ -153,10 +181,15 @@ void CPlayer::Update(void)
 	// 位置の更新
 	pos += m_move;
 
+	float fHeight = 0.0f;
+
 	// メッシュフィールドの当たり判定
-	if (pMesh->Collision(&pos))
+	if (pMesh->Collision(pos,&fHeight))
 	{
+		pos.y = fHeight;
+
 		m_bJump = true;
+		
 		if (m_pMotion->GetBlendMotionType() == MOTIONTYPE_JUMP) {
 
 			m_pMotion->SetMotion(MOTIONTYPE_LANDING, true, 5);
@@ -170,6 +203,22 @@ void CPlayer::Update(void)
 
 	// 重力を加算
 	m_move.y += -MAX_GLABITY;
+
+	if (m_pShadow != nullptr)
+	{
+		pMesh = CManager::GetMeshField();
+
+		D3DXVECTOR3 FieldNor = pMesh->GetNor(); 				// 地面の法線ベクトルの取得
+		D3DXVECTOR3 PlayerRay = D3DXVECTOR3(0.0f, 1.0f, 0.0f);  // 上方向ベクトルの作成
+
+		// 地面の角度に合わせた角度を取得
+		D3DXVECTOR3 rot = m_pShadow->GetFieldAngle(FieldNor, PlayerRay);
+
+		// 影の設定処理
+		m_pShadow->Setting(D3DXVECTOR3(pos.x,pos.y - fHeight,pos.z),D3DXVECTOR3(pos.x, fHeight + 2.0f, pos.z), SHADOW_SIZE, SHADOW_SIZE, SHADOW_MAX_HEIGHT,SHADOW_A_LEVEL);
+
+		m_pShadow->SetRotaition(rot);
+	}
 
 
 	// ジャンプできるなら
@@ -194,14 +243,27 @@ void CPlayer::Update(void)
 
 	if (pKeyboard->GetTrigger(DIK_V))
 	{
-		pMesh->SetWave(pos, 120, 5.0f, 10.0f, 300.0f, 380.0f);
+		pMesh->SetWave(pos, 120, 15.0f, 20.0f, 300.0f, 380.0f,0.01f);
 	}
 
+	if (pKeyboard->GetTrigger(DIK_R) || pJoypad->GetTrigger(pJoypad->JOYKEY_RIGHT_THUMB))
+	{
+		CCamera::STATE state; // カメラの状態
+
+		// カメラの状態を判定
+		const bool rockon = pCamera->GetState() == CCamera::STATE_ROCKON;
+
+		// ロックオンじゃなかったらロックオン
+		state = rockon ? CCamera::STATE_TRACKING : CCamera::STATE_ROCKON;
+
+		pCamera->SetState(state);
+	}
 	// 位置の設定
 	CCharacter3D::SetPosition(pos);
 
 	// プレイヤーのモーションの遷移
 	TransitionMotion();
+
 
 	if (m_pMotion != nullptr)
 	{
@@ -209,8 +271,20 @@ void CPlayer::Update(void)
 		m_pMotion->Update(&m_apModel[0], m_nNumModel);
 	}
 
+
 	// 角度の補間
 	CCharacter3D::SmoothAngle(0.1f);
+
+	D3DXVECTOR3 posRDest;
+
+	D3DXVECTOR3 rot = GetDestRot();
+
+	posRDest.x = pos.x + sinf(rot.y) * 1.0f;
+	posRDest.y = (pos.y + 200.0f) + sinf(rot.y) * 1.0f;
+	posRDest.z = pos.z + cosf(rot.y) * 1.0f;
+
+	// カメラの追従処理
+	pCamera->SetTracking(posRDest,1.0f,0.1f);
 }
 
 //===================================================
@@ -221,16 +295,12 @@ void CPlayer::Draw(void)
 	// キャラクターの描画
 	CCharacter3D::Draw();
 
-	m_pMotion->Debug();
 	for (int nCnt = 0; nCnt < m_nNumModel; nCnt++)
 	{
 		if (m_apModel[nCnt] != nullptr)
 		{
 			// 描画処理
 			m_apModel[nCnt]->Draw();
-
-			// モデルの影の描画処理
-			m_apModel[nCnt]->DrawShadow();
 		}
 	}
 }
@@ -241,6 +311,7 @@ void CPlayer::Draw(void)
 bool CPlayer::MoveKeyboard(CInputKeyboard* pKeyboard)
 {
 	bool bMove = false;
+
 	// カメラの取得
 	CCamera* pCamera = CManager::GetCamera();
 
@@ -248,7 +319,7 @@ bool CPlayer::MoveKeyboard(CInputKeyboard* pKeyboard)
 	D3DXVECTOR3 cameraRot = pCamera->GetRotaition();
 
 	// 速さ
-	float fSpeed = m_fSpeed;
+	float fSpeed = m_bDash ? MOVE_SPEED : 2.0f;
 
 	// 目的の角度
 	float fDestAngle = NULL;
@@ -366,7 +437,9 @@ bool CPlayer::MoveKeyboard(CInputKeyboard* pKeyboard)
 	}
 	else
 	{
-		if (m_pMotion->GetBlendMotionType() == MOTIONTYPE_MOVE)
+		int motiontype = m_pMotion->GetBlendMotionType();
+
+		if (motiontype == MOTIONTYPE_MOVE || motiontype == MOTIONTYPE_DASH)
 		{
 			m_pMotion->SetMotion(MOTIONTYPE_NEUTRAL, true, 15);
 		}
@@ -390,6 +463,9 @@ void CPlayer::MoveJoypad(CInputJoypad* pJoypad)
 	// カメラの向き
 	D3DXVECTOR3 cameraRot = pCamera->GetRotaition();
 
+	// 速さ
+	float fSpeed = m_bDash ? MOVE_SPEED : 2.0f;
+
 	// Lスティックの角度
 	float LStickAngleY = pStick->Gamepad.sThumbLY;
 	float LStickAngleX = pStick->Gamepad.sThumbLX;
@@ -412,22 +488,30 @@ void CPlayer::MoveJoypad(CInputJoypad* pJoypad)
 		float moveZ = normalizeX * sinf(-cameraRot.y) + normalizeY * cosf(-cameraRot.y);
 
 		// 移動量をスティックの角度によって変更
-		float speed = m_fSpeed * ((magnitude - deadzone) / (32767.0f - deadzone));
+		float speedWk = fSpeed * ((magnitude - deadzone) / (32767.0f - deadzone));
 
 		// プレイヤーの移動
-		m_move.x += moveX * speed;
-		m_move.z += moveZ * speed; 
+		m_move.x += moveX * speedWk;
+		m_move.z += moveZ * speedWk;
 
 		// プレイヤーの角度を移動方向にする
 		float fDestAngle = atan2f(-moveX, -moveZ);
 
 		CCharacter3D::SetRotDest(D3DXVECTOR3(0.0f, fDestAngle, 0.0f));
 
-		m_pMotion->SetMotion(MOTIONTYPE_MOVE, true, 15);
+		// ダッシュモーションか歩きモーションかを判定
+		int isDashMotion = (m_bDash ? MOTIONTYPE_DASH : MOTIONTYPE_MOVE);
+
+		// ジャンプかjumpじゃないかを判定
+		int motiontype = m_bJump ? isDashMotion : MOTIONTYPE_JUMP;
+
+		m_pMotion->SetMotion(motiontype, true, 5);
 	}
 	else
 	{
-		if (m_pMotion->GetBlendMotionType() == MOTIONTYPE_MOVE)
+		int motiontype = m_pMotion->GetBlendMotionType();
+
+		if (motiontype == MOTIONTYPE_MOVE || motiontype == MOTIONTYPE_DASH)
 		{
 			m_pMotion->SetMotion(MOTIONTYPE_NEUTRAL, true, 15);
 		}

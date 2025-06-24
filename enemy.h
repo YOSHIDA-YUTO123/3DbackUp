@@ -17,6 +17,7 @@
 #include"main.h"
 #include"character3D.h"
 #include "motion.h"
+class CShadow;
 
 //***************************************************
 // マクロ定義
@@ -48,9 +49,9 @@ public:
 	int IsAttack(void);
 	bool Wait(void);
 private:
-	CMotion* m_pMotion;		// モーションのクラスへのポインタ
-	ACTION m_Action;		// 敵の行動パターン
-	int m_nCounterAction;	// 行動のカウンター
+	CMotion* m_pMotion;			// モーションのクラスへのポインタ
+	ACTION m_Action;			// 敵の行動パターン
+	int m_nCounterAction;		// 行動のカウンター
 };
 
 //***************************************************
@@ -83,11 +84,14 @@ public:
 	void UpdateMoveMotion(void);
 private:
 	void TransitionMotion(void);
+	void SetParent(const int nCnt);
 
+	CShadow* m_pShadow;					// 影のクラスへのポインタ
 	CEnemyAI* m_pAI;					// 敵のAI
 	CMotion* m_pMotion;					// モーションのクラスへのポインタ
 	CModel* m_apModel[ENEMY_MAX_PARTS];	// モデルクラスへのポインタ
 	D3DXVECTOR3 m_move;					// 移動量
+	D3DXMATRIX m_weponMatrix;	// 武器のワールドマトリックス
 	float m_fSpeed;						// 移動速度
 	int m_nNumModel;					// モデルの最大数
 };

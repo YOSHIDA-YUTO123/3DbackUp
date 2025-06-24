@@ -16,6 +16,7 @@
 //***************************************************
 #include"main.h"
 #include"objectX.h"
+#include"transform.h"
 
 //***************************************************
 // キャラクター3Dクラスの定義
@@ -43,6 +44,8 @@ public:
 	bool HitCharacter(int nDamage);
 	void SmoothAngle(const float fCoefficient);
 private:
+	//CPosition m_pos;
+	//CRotation m_rot;
 	D3DXVECTOR3 m_pos;		// 位置
 	D3DXVECTOR3 m_rot;		// 向き
 	D3DXMATRIX m_mtxWorld;	// ワールドマトリックス

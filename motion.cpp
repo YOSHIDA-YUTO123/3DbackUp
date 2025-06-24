@@ -25,26 +25,26 @@
 //===================================================
 CMotion::CMotion()
 {
-	m_apMotionInfo = nullptr;
+	//m_aInfo = nullptr;
 	m_bLoopMotion = false;
-	m_nCountMotion = NULL;
+	m_nCount = NULL;
 	m_nextKey = NULL;
 	m_nKey = NULL;
 	m_nNumKey = NULL;
-	m_nNumMotion = NULL;
-	m_nNumModel = NULL;
-	m_motiontype = NULL;
-	m_motiontypeBlend = NULL;
-	m_bFinishMotion = false;
-	m_bFirstMotion = false;
-	m_bBlendMotion = false;
-	m_bLoopMotionBlend = false;
+	m_nType = NULL;
+	m_nTypeBlend = NULL;
+	m_bFinish = false;
+	m_bFirst = false;
+	m_bBlend = false;
+	m_bLoopBlend = false;
 	m_nCounterBlend = NULL;
 	m_nCounterMotionBlend = NULL;
 	m_nNextKeyBlend = NULL;
 	m_nFrameBlend = NULL;
 	m_nKeyBlend = NULL;
 	m_nNumKeyBlend = NULL;
+	m_nAllCounter = NULL;
+	m_nAllFrame = NULL;
 }
 
 //===================================================
@@ -57,331 +57,40 @@ CMotion::~CMotion()
 //===================================================
 // モーションのロード処理
 //===================================================
-CMotion* CMotion::Load(const char* pLoadFileName, CModel** ppModel, const int nMaxSize, int* pOutModel,const int nNumMotion)
+CMotion* CMotion::Load(const char* pLoadFileName, CModel** ppModel, const int nMaxSize, int* pOutModel,const int nNumMotion, LOAD type)
 {
 	// モーションを生成
 	CMotion* pMotion = new CMotion;
 
-	// モーション情報構造体のメモリの確保
-	pMotion->m_apMotionInfo = new CMotion::Motion_Info[nNumMotion];
-
-	// ファイルをロードする
-	ifstream File(pLoadFileName);
-	string line;
-	string input;
-
-	int nNumModel = 0;
-
-	D3DXVECTOR3 offset = VEC3_NULL;
-
-	bool bCharacterSet = false;	// キャラクターの設定をしたかどうか
-
-	if (File.is_open() == true)
+	if (pMotion != nullptr)
 	{
-		// 最後の行になるまで読み込む
-		while (getline(File, line))
+		switch (type)
 		{
-			size_t equal_pos = line.find("="); // =の位置
-
-			// [=] から先を求める
-			input = line.substr(equal_pos + 1);
-
-			// モデルのロード処理
-			if (pMotion->LoadModel(ppModel, nMaxSize, nNumModel, input, line, pMotion))
-			{
-				if (nNumModel <= nMaxSize - 1)
-				{
-					nNumModel++;
-				}
-			}
-
-			// パーツの設定が終わって無かったら
-			if (bCharacterSet == false)
-			{
-				bCharacterSet = pMotion->LoadCharacterSet(ppModel, line,input, pMotion);
-			}
-
-			// モーションの設定の読み込み
-			pMotion->LoadMotionSet(pMotion, File, line,nNumMotion);
-
-			// モーションの数が最大まで行ったら
-			if (pMotion->m_nNumMotion >= nNumMotion)
-			{
-				break;
-			}
+		case LOAD_TEXT:
+			// モーションのロード処理(textFile)
+			pMotion->m_pLoader = CLoderText::LoadTextFile(pLoadFileName, pMotion->m_aInfo, ppModel, pOutModel, nMaxSize, nNumMotion);
+			break;
+		default:
+			MessageBox(NULL, "この形式は読み込めません", "エラー", MB_OK | MB_ICONWARNING);
+			break;
 		}
-		// ファイルを閉じる
-		File.close();
 	}
-	else
-	{
-		// メモリの破棄
-		if (pMotion->m_apMotionInfo != nullptr)
-		{
-			delete[] pMotion->m_apMotionInfo;
-
-			pMotion->m_apMotionInfo = nullptr;
-		}
-		
-		// メモリの破棄
-		if (pMotion != nullptr)
-		{
-			delete pMotion;
-			pMotion = nullptr;
-		}
-
-		// メッセージボックス
-		MessageBox(NULL, pLoadFileName, "ファイルが開けませんでした", MB_OK);
-
-		return nullptr;
-	}
-
-	*pOutModel = nNumModel;
 
 	return pMotion;
 }
 
 //===================================================
-// モデルのロード
+// イベントフレームの判定
 //===================================================
-bool CMotion::LoadModel(CModel** ppModel, const int nMaxSize, int nCnt, string Input, string line, CMotion *pMotion)
+bool CMotion::IsIventFrame(const int nStartFrame, const int nEndFrame,const int nType)
 {
-	if (line.find("MODEL_FILENAME") != string::npos)
-	{
-		// 数値を読み込む準備
-		istringstream value_Input = pMotion->SetInputvalue(Input);
-
-		// モデルの名前格納用変数
-		string modelName;
-
-		// 数値を代入する
-		value_Input >> modelName;
-
-		// モデルの名前を代入
-		const char* MODEL_NAME = modelName.c_str();
-
-		// サイズ以上に読み込むとエラーが出るため制限
-		if (nCnt <= nMaxSize - 1)
-		{
-			// モデルの生成
-			ppModel[nCnt] = CModel::Create(MODEL_NAME);
-
-			return true;
-		}
-		else
-		{
-			MessageBox(NULL, MODEL_NAME, "これ以上読み込めません", MB_OK);
-		}
-	}
-	return false;
-}
-
-//===================================================
-// キャラクターの設定処理
-//===================================================
-bool CMotion::LoadCharacterSet(CModel** ppModel,string line, string input, CMotion* pMotion)
-{
-	static int nIdx = 0;
-	int nNumParts = 0;
-	int nParent = 0;
-	D3DXVECTOR3 offset = VEC3_NULL;
-
-	if (line.find("NUM_PARTS") != string::npos)
-	{
-		// 数値を読み込む準備
-		istringstream value_Input = pMotion->SetInputvalue(input);
-
-		// 数値を代入する
-		value_Input >> nNumParts;
-
-		// パーツの最大数を設定
-		m_nNumModel = nNumParts;
-	}
-
-	if (line.find("INDEX") != string::npos)
-	{
-		// 数値を読み込む準備
-		istringstream value_Input = pMotion->SetInputvalue(input);
-
-		// 数値を代入する
-		value_Input >> nIdx;
-	}
-
-	if (line.find("PARENT") != string::npos)
-	{
-		// 数値を読み込む準備
-		istringstream value_Input = pMotion->SetInputvalue(input);
-
-		// 数値を代入する
-		value_Input >> nParent;
-
-		if (nParent != -1)
-		{// 親が存在していたら
-			// 親のモデルの設定
-			ppModel[nIdx]->SetParent(ppModel[nParent]);
-		}
-		else
-		{// 親が存在していなかったら
-			ppModel[nIdx]->SetParent(nullptr);
-		}
-	}
-
-	if (line.find("POS") != string::npos)
-	{
-		// 数値を読み込む準備
-		istringstream value_Input = pMotion->SetInputvalue(input);
-
-		// 数値を代入する
-		value_Input >> offset.x;
-		value_Input >> offset.y;
-		value_Input >> offset.z;
-
-		ppModel[nIdx]->SetOffPos(offset);
-	}
-
-	if (line.find("ROT") != string::npos)
-	{
-		// 数値を読み込む準備
-		istringstream value_Input = pMotion->SetInputvalue(input);
-
-		// 数値を代入する
-		value_Input >> offset.x;
-		value_Input >> offset.y;
-		value_Input >> offset.z;
-
-		ppModel[nIdx]->SetOffRot(offset);
-	}
-
-	if (line.find("END_CHARACTERSET") != string::npos)
+	// イベントフレームの範囲に入ったら
+	if (m_nAllCounter >= nStartFrame && m_nAllCounter <= nEndFrame && m_nType == nType)
 	{
 		return true;
 	}
-	
+
 	return false;
-}
-
-//===================================================
-// モーションのロード処理
-//===================================================
-void CMotion::LoadMotionSet(CMotion* pMotion, ifstream& File,string nowLine, const int nNumMotion)
-{
-	string line,input;
-
-	int loop = 0;
-	int nKey = 0;
-	int nCntModel = 0;
-
-	if (nowLine.find("MOTIONSET") != string::npos)
-	{
-		while (getline(File, line))
-		{
-			size_t equal_pos = line.find("="); // =の位置
-
-			// [=] から先を求める
-			input = line.substr(equal_pos + 1);
-
-			if (line.find("LOOP") != string::npos)
-			{
-				// 数値を読み込む準備
-				istringstream value_Input = pMotion->SetInputvalue(input);
-
-				// 数値を代入する
-				value_Input >> loop;
-
-				// ループするかどうか
-				pMotion->m_apMotionInfo[pMotion->m_nNumMotion].bLoop = (loop == 1) ? true : false;
-			}
-
-			if (line.find("NUM_KEY") != string::npos)
-			{
-				// = から先を求める
-				input = line.substr(equal_pos + 1);
-
-				// 数値を読み込む準備
-				istringstream value_Input = pMotion->SetInputvalue(input);
-
-				// 数値を代入する
-				value_Input >> pMotion->m_apMotionInfo[pMotion->m_nNumMotion].nNumkey;
-
-				// キーの総数を代入
-				int nNumKey = pMotion->m_apMotionInfo[pMotion->m_nNumMotion].nNumkey;
-
-				m_apMotionInfo[pMotion->m_nNumMotion].apKeyInfo = CMotionManager::CreateKeyInfo(nNumKey);
-
-				for (int nCntKey = 0; nCntKey < nNumKey; nCntKey++)
-				{
-					m_apMotionInfo[pMotion->m_nNumMotion].apKeyInfo[nCntKey].apKey = CMotionManager::CreateKey(m_nNumModel);
-				}
-			}
-
-			if (line.find("FRAME") != string::npos)
-			{
-				// = から先を求める
-				input = line.substr(equal_pos + 1);
-
-				// 数値を読み込む準備
-				istringstream value_Input = pMotion->SetInputvalue(input);
-
-				// 数値を代入する
-				value_Input >> pMotion->m_apMotionInfo[pMotion->m_nNumMotion].apKeyInfo[nKey].nFrame;
-			}
-
-			if (line.find("POS") != string::npos)
-			{
-				// = から先を求める
-				input = line.substr(equal_pos + 1);
-
-				// 数値を読み込む準備
-				istringstream value_Input = pMotion->SetInputvalue(input);
-
-				// 数値を代入する
-				value_Input >> pMotion->m_apMotionInfo[pMotion->m_nNumMotion].apKeyInfo[nKey].apKey[nCntModel].fPosX;
-				value_Input >> pMotion->m_apMotionInfo[pMotion->m_nNumMotion].apKeyInfo[nKey].apKey[nCntModel].fPosY;
-				value_Input >> pMotion->m_apMotionInfo[pMotion->m_nNumMotion].apKeyInfo[nKey].apKey[nCntModel].fPosZ;
-			}
-			if (line.find("ROT") != string::npos)
-			{
-				// = から先を求める
-				input = line.substr(equal_pos + 1);
-
-				// 数値を読み込む準備
-				istringstream value_Input = pMotion->SetInputvalue(input);
-
-				// 数値を代入する
-				value_Input >> pMotion->m_apMotionInfo[pMotion->m_nNumMotion].apKeyInfo[nKey].apKey[nCntModel].fRotX;
-				value_Input >> pMotion->m_apMotionInfo[pMotion->m_nNumMotion].apKeyInfo[nKey].apKey[nCntModel].fRotY;
-				value_Input >> pMotion->m_apMotionInfo[pMotion->m_nNumMotion].apKeyInfo[nKey].apKey[nCntModel].fRotZ;
-			}
-
-			if (line.find("END_KEY") != string::npos)
-			{
-				nCntModel++;
-
-				nCntModel = Clamp(nCntModel, 0, m_nNumModel - 1);
-			}
-
-			if (line.find("END_KEYSET") != string::npos)
-			{
-				nKey++;
-				nCntModel = NULL;
-			}
-			if (line.find("END_MOTIONSET") != string::npos)
-			{
-				nKey = NULL;
-
-				if (pMotion->m_nNumMotion <= nNumMotion - 1)
-				{
-					pMotion->m_nNumMotion++;
-				}
-				else
-				{
-				}
-
-
-				break;
-			}
-		}
-	}
 }
 
 //===================================================
@@ -389,51 +98,12 @@ void CMotion::LoadMotionSet(CMotion* pMotion, ifstream& File,string nowLine, con
 //===================================================
 void CMotion::Uninit(void)
 {
-	// キーの破棄
-	for (int nCntMotion = 0; nCntMotion < m_nNumMotion; nCntMotion++)
+	// ローダーの破棄
+	if (m_pLoader != nullptr)
 	{
-		// キーの破棄
-		for (int nCntKey = 0; nCntKey < m_apMotionInfo[nCntMotion].nNumkey; nCntKey++)
-		{
-			if (m_apMotionInfo[nCntMotion].apKeyInfo[nCntKey].apKey != nullptr)
-			{
-				delete[] m_apMotionInfo[nCntMotion].apKeyInfo[nCntKey].apKey;
-				m_apMotionInfo[nCntMotion].apKeyInfo[nCntKey].apKey = nullptr;
-			}
-		}
+		delete m_pLoader;
+		m_pLoader = nullptr;
 	}
-
-	// キー情報の破棄
-	for (int nCntMotion = 0; nCntMotion < m_nNumMotion; nCntMotion++)
-	{
-		if (m_apMotionInfo[nCntMotion].apKeyInfo != nullptr)
-		{
-			delete[] m_apMotionInfo[nCntMotion].apKeyInfo;
-			m_apMotionInfo[nCntMotion].apKeyInfo = nullptr;
-		}
-	}
-
-	// メモリの破棄
-	if (m_apMotionInfo != nullptr)
-	{
-		delete[] m_apMotionInfo;
-
-		m_apMotionInfo = nullptr;
-	}
-}
-
-//===================================================
-// 値を読み込むまでの準備
-//===================================================
-istringstream CMotion::SetInputvalue(std::string input)
-{
-	// 先頭の = を消す
-	input.erase(0, input.find_first_not_of(" = "));
-
-	// inputから数値を取り出す準備
-	istringstream value_Input(input);
-
-	return value_Input;
 }
 
 //===================================================
@@ -442,39 +112,22 @@ istringstream CMotion::SetInputvalue(std::string input)
 void CMotion::FinishFirstBlend(void)
 {
 	// モーションの出だしのブレンドが終了した
-	if (m_bFirstMotion == true && m_nCounterBlend >= m_nFrameBlend && m_bFinishMotion == false)
+	if (m_bFirst == true && m_nCounterBlend >= m_nFrameBlend && m_bFinish == false)
 	{
 		// もとに戻す
-		m_bFirstMotion = false;
+		m_bFirst = false;
 
 		m_nKeyBlend = 0;
 		m_nKey = 0;
 
 		// モーションをブレンドしたモーションにする
-		m_motiontype = m_motiontypeBlend;
+		m_nType = m_nTypeBlend;
 
-		m_nCountMotion = m_nCounterBlend;
+		m_nCount = m_nCounterBlend;
+		m_nAllCounter = m_nCounterBlend;
 
 		m_nCounterBlend = 0;
 	}
-}
-
-//===================================================
-// デバッグ
-//===================================================
-void CMotion::Debug(void)
-{
-	CDebugProc::Print("キー %d / %d\n", m_nKey, m_apMotionInfo[m_motiontype].nNumkey);
-	CDebugProc::Print("ブレンドキー%d / %d\n", m_nKeyBlend, m_apMotionInfo[m_motiontypeBlend].nNumkey);
-
-	CDebugProc::Print("フレーム%d\n", m_nCountMotion);
-	CDebugProc::Print("ブレンドフレーム%d\n", m_nCounterBlend);
-
-	CDebugProc::Print("first = %d\n", m_bFirstMotion);
-	CDebugProc::Print("finish = %d\n", m_bFinishMotion);
-
-	CDebugProc::Print("モーション = %d\n", m_motiontype);
-	CDebugProc::Print("モーションブレンド = %d\n", m_motiontypeBlend);
 }
 
 //===================================================
@@ -483,13 +136,13 @@ void CMotion::Debug(void)
 void CMotion::UpdateCurrentMotion(CModel** pModel, int nIdx)
 {
 	// 次のキーのアドレスの取得
-	Key* pKeyNext = &m_apMotionInfo[m_motiontype].apKeyInfo[m_nextKey].apKey[nIdx];
+	Key* pKeyNext = &m_aInfo[m_nType].aKeyInfo[m_nextKey].aKey[nIdx];
 
 	// 現在のキーのアドレスの取得
-	Key* pKey = &m_apMotionInfo[m_motiontype].apKeyInfo[m_nKey].apKey[nIdx];
+	Key* pKey = &m_aInfo[m_nType].aKeyInfo[m_nKey].aKey[nIdx];
 
 	// キー情報のアドレスの取得
-	Key_Info* pKeyInfo = &m_apMotionInfo[m_motiontype].apKeyInfo[m_nKey];
+	Key_Info* pKeyInfo = &m_aInfo[m_nType].aKeyInfo[m_nKey];
 
 	// 次のキーまでの距離を求める
 	float fDiffPosX = pKeyNext->fPosX - pKey->fPosX;
@@ -506,7 +159,7 @@ void CMotion::UpdateCurrentMotion(CModel** pModel, int nIdx)
 	NormalizeRot(&fDiffRotZ);
 
 	// フレームと最大フレームの割合を求める
-	float fRateFrame = (float)m_nCountMotion / (float)pKeyInfo->nFrame;
+	float fRateFrame = (float)m_nCount / (float)pKeyInfo->nFrame;
 
 	// 次のキーの位置までフレームに応じた位置を設定する
 	float fPosX = LerpDiff(pKey->fPosX, fDiffPosX, fRateFrame);
@@ -529,16 +182,16 @@ void CMotion::UpdateCurrentMotion(CModel** pModel, int nIdx)
 void CMotion::UpdateBlendMotion(CModel** pModel, int nIdx)
 {
 	// 現在のキーのアドレスを取得
-	Key* pCurrentKey = &m_apMotionInfo[m_motiontype].apKeyInfo[m_nKey].apKey[nIdx];
+	Key* pCurrentKey = &m_aInfo[m_nType].aKeyInfo[m_nKey].aKey[nIdx];
 
 	// 次のキーのアドレスを取得
-	Key* pNextKey = &m_apMotionInfo[m_motiontype].apKeyInfo[m_nextKey].apKey[nIdx];
+	Key* pNextKey = &m_aInfo[m_nType].aKeyInfo[m_nextKey].aKey[nIdx];
 
 	// キー情報のアドレスの取得
-	Key_Info* pKeyInfo = &m_apMotionInfo[m_motiontype].apKeyInfo[m_nKey];
+	Key_Info* pKeyInfo = &m_aInfo[m_nType].aKeyInfo[m_nKey];
 
-	float fRateMotion = (float)m_nCountMotion / (float)pKeyInfo->nFrame; // 相対値
-	float fRateMotionBlend = (float)m_nCounterBlend / (float)m_apMotionInfo[m_motiontypeBlend].apKeyInfo[m_nKeyBlend].nFrame;
+	float fRateMotion = (float)m_nCount / (float)pKeyInfo->nFrame; // 相対値
+	float fRateMotionBlend = (float)m_nCounterBlend / (float)m_aInfo[m_nTypeBlend].aKeyInfo[m_nKeyBlend].nFrame;
 
 	float fRateBlend = (float)m_nCounterBlend / (float)m_nFrameBlend;
 
@@ -558,10 +211,10 @@ void CMotion::UpdateBlendMotion(CModel** pModel, int nIdx)
 	float fRotZCurrent = LerpDiff(pCurrentKey->fRotZ, fDiffMotionRZ, fRateMotion);
 
 	// ブレンドのキーのアドレスを取得
-	Key* pCurrentBlendKey = &m_apMotionInfo[m_motiontypeBlend].apKeyInfo[m_nKeyBlend].apKey[nIdx];
+	Key* pCurrentBlendKey = &m_aInfo[m_nTypeBlend].aKeyInfo[m_nKeyBlend].aKey[nIdx];
 
 	// ブレンドの次のキーのアドレスを取得
-	Key* pNextBlendKey = &m_apMotionInfo[m_motiontypeBlend].apKeyInfo[m_nNextKeyBlend].apKey[nIdx];
+	Key* pNextBlendKey = &m_aInfo[m_nTypeBlend].aKeyInfo[m_nNextKeyBlend].aKey[nIdx];
 
 	//ブレンドモーションの角度の差分を求める
 	float fDiffMotionBlendRX = pNextBlendKey->fRotX - pCurrentBlendKey->fRotX;
@@ -633,11 +286,11 @@ void CMotion::Update(CModel** pModel,const int nNumModel)
 	for (int nCntModel = 0; nCntModel < nNumModel; nCntModel++)
 	{
 		// キーの総数
-		m_nNumKey = m_apMotionInfo[m_motiontype].nNumkey;
-		m_nNumKeyBlend = m_apMotionInfo[m_motiontypeBlend].nNumkey;
+		m_nNumKey = m_aInfo[m_nType].nNumkey;
+		m_nNumKeyBlend = m_aInfo[m_nTypeBlend].nNumkey;
 
 		// ループするかどうか
-		m_bLoopMotion = m_apMotionInfo[m_motiontype].bLoop;
+		m_bLoopMotion = m_aInfo[m_nType].bLoop;
 
 		//if (motiontype < 0 || motiontype >= TYPE::TYPE_MAX)
 		//{
@@ -645,17 +298,17 @@ void CMotion::Update(CModel** pModel,const int nNumModel)
 		//}
 		
 		// 次のキーを増やす
-		m_nextKey = (m_nKey + 1) % m_apMotionInfo[m_motiontype].nNumkey;
+		m_nextKey = (m_nKey + 1) % m_aInfo[m_nType].nNumkey;
 
 		// 次のブレンドキーを増やす
 		m_nNextKeyBlend = (m_nKeyBlend + 1) % m_nNumKeyBlend;
 
-		if (m_bFinishMotion == false && m_bFirstMotion == false)
+		if (m_bFinish == false && m_bFirst == false)
 		{
 			// 現在のモーションの更新処理
 			UpdateCurrentMotion(pModel, nCntModel);
 		}
-		if ((m_bFinishMotion == true || m_bFirstMotion == true) && m_bBlendMotion == true)
+		if ((m_bFinish == true || m_bFirst == true) && m_bBlend == true)
 		{
 			// ブレンドのモーションの更新処理
 			UpdateBlendMotion(pModel, nCntModel);
@@ -666,9 +319,9 @@ void CMotion::Update(CModel** pModel,const int nNumModel)
 	if (IsEndMotion())
 	{
 		m_nCounterBlend = 0;
-		m_bFinishMotion = true;
-		m_nFrameBlend = m_apMotionInfo[m_motiontype].apKeyInfo[m_nNumKey - 1].nFrame;
-		m_motiontypeBlend = NEUTRAL;
+		m_bFinish = true;
+		m_nFrameBlend = m_aInfo[m_nType].aKeyInfo[m_nNumKey - 1].nFrame;
+		m_nTypeBlend = NEUTRAL;
 	}
 
 	// モーションの出だしのブレンドが終了した
@@ -677,33 +330,51 @@ void CMotion::Update(CModel** pModel,const int nNumModel)
 	// キーが最大かつブレンドのカウントが最大になった
 	if (IsFinishEndBlend() == true)
 	{
-		m_bFinishMotion = false;			// もとに戻す
-		m_bBlendMotion = false;				// もとに戻す
-		m_nCountMotion = m_nFrameBlend;	    // フレームをブレンドした先のフレームに合わせる
-		m_motiontype = NEUTRAL;				// モーションタイプをニュートラルにする
+		m_bFinish = false;			// もとに戻す
+		m_bBlend = false;				// もとに戻す
+		m_nCount = m_nFrameBlend;	    // フレームをブレンドした先のフレームに合わせる
+		m_nAllCounter = m_nFrameBlend;
+		m_nType = NEUTRAL;				// モーションタイプをニュートラルにする
 		m_nCounterBlend = 0;
 	}
 
-	if (m_nCountMotion >= m_apMotionInfo[m_motiontype].apKeyInfo[m_nKey].nFrame)
+	if (m_nCount >= m_aInfo[m_nType].aKeyInfo[m_nKey].nFrame)
 	{
 		// キーを増やす
-		m_nKey = (m_nKey + 1) % m_apMotionInfo[m_motiontype].nNumkey;
+		m_nKey = (m_nKey + 1) % m_aInfo[m_nType].nNumkey;
 
-		m_nCountMotion = 0;
+		m_nCount = 0;
 	}
 
-	if (m_bFirstMotion == false)
+	if (m_bFirst == false)
 	{
-		m_nCountMotion++;
+		m_nAllCounter++;
+		m_nCount++;
 	}
 
 	// ブレンドが始まったら
-	if (m_bFinishMotion == true || m_bFirstMotion == true)
+	if (m_bFinish == true || m_bFirst == true)
 	{
 		m_nCounterBlend++;
 	}
 
 
+	int nAllFrame = 0;
+
+	for (int nCnt = 0; nCnt < m_aInfo[m_nType].nNumkey; nCnt++)
+	{
+		nAllFrame += m_aInfo[m_nType].aKeyInfo[nCnt].nFrame;
+	}
+
+	m_nAllFrame = nAllFrame;
+
+	// 最大を超えたら
+	if (m_nAllCounter >= m_nAllFrame)
+	{
+		m_nAllCounter = 0;
+	}
+
+	CDebugProc::Print("%d / %d\n", m_nAllCounter, m_nAllFrame);
 }
 
 //===================================================
@@ -711,11 +382,18 @@ void CMotion::Update(CModel** pModel,const int nNumModel)
 //===================================================
 void CMotion::SetMotion(const int motiontype,bool bBlend,const int nBlendFrame)
 {
-	if (m_motiontypeBlend == motiontype || m_motiontype == motiontype) return;
+	// 同じモーションだったらスキップ
+	if (m_nTypeBlend == motiontype || m_nType == motiontype) return;
+
+	// モーションの総数を超えていたら
+	if (m_pLoader->GetNumMotion() <= motiontype)
+	{
+		return;
+	}
 
 	if (bBlend == true)
 	{
-		//if (m_apMotionInfo[motiontype].bLoop == false || m_bFirstMotion == false)
+		//if (m_aInfo[motiontype].bLoop == false || m_bFirst == false)
 		//{
 		//	m_nFrameBlend = nBlendFrame;
 		//	m_nCounterBlend = 0;
@@ -723,23 +401,23 @@ void CMotion::SetMotion(const int motiontype,bool bBlend,const int nBlendFrame)
 
 		m_nFrameBlend = nBlendFrame;
 
-		if (m_apMotionInfo[motiontype].apKeyInfo[0].nFrame <= m_nCounterBlend)
+		if (m_aInfo[motiontype].aKeyInfo[0].nFrame <= m_nCounterBlend)
 		{
 			m_nCounterBlend = 0;
 		}
 
 		m_nKeyBlend = 0;
-		m_bFirstMotion = true;
-		m_bFinishMotion = false;
-		m_bBlendMotion = bBlend;
-		m_motiontypeBlend = motiontype;
+		m_bFirst = true;
+		m_bFinish = false;
+		m_bBlend = bBlend;
+		m_nTypeBlend = motiontype;
 	}
 	else
 	{
-		m_bBlendMotion = bBlend;				// ブレンドがあるかどうか
-		m_motiontype = motiontype;			// ブレンドするモーションのタイプを代入
-		m_motiontypeBlend = motiontype;		// ブレンドするモーションのタイプを代入
-		m_bFinishMotion = false;
+		m_bBlend = bBlend;				// ブレンドがあるかどうか
+		m_nType = motiontype;			// ブレンドするモーションのタイプを代入
+		m_nTypeBlend = motiontype;		// ブレンドするモーションのタイプを代入
+		m_bFinish = false;
 	}
 }
 
@@ -749,11 +427,11 @@ void CMotion::SetMotion(const int motiontype,bool bBlend,const int nBlendFrame)
 bool CMotion::IsEndMotion(void)
 {
 	// モーションが終了したら
-	if (m_bFinishMotion == false &&
+	if (m_bFinish == false &&
 		m_nKey >= m_nNumKey - 1 &&
-		m_bBlendMotion == true &&
+		m_bBlend == true &&
 		m_bLoopMotion == false &&
-		m_bFirstMotion == false)
+		m_bFirst == false)
 	{
 		return true;
 	}
@@ -765,7 +443,7 @@ bool CMotion::IsEndMotion(void)
 //===================================================
 bool CMotion::IsFinishEndBlend(void)
 {
-	if (m_bFinishMotion == true && m_nFrameBlend <= m_nCounterBlend && m_bFirstMotion == false)
+	if (m_bFinish == true && m_nFrameBlend <= m_nCounterBlend && m_bFirst == false)
 	{
 		return true;
 	}
@@ -775,47 +453,360 @@ bool CMotion::IsFinishEndBlend(void)
 //===================================================
 // コンストラクタ
 //===================================================
-CMotionManager::CMotionManager()
+CMotionLoader::CMotionLoader()
 {
-	
+	m_nNumModel = NULL;
+	m_nNumMotion = NULL;
 }
 
 //===================================================
 // デストラクタ
 //===================================================
-CMotionManager::~CMotionManager()
+CMotionLoader::~CMotionLoader()
 {
 }
 
 //===================================================
-// モーション情報の生成
+// テキストファイルのロード処理
 //===================================================
-CMotion::Motion_Info* CMotionManager::CreateMotionInfo(const int nNumMotion)
+CLoderText* CLoderText::LoadTextFile(const char* pFileName, vector<CMotion::Info>& Info, CModel** ppModel, int* OutNumModel, const int nMaxSize,const int nNumMotion)
 {
-	// 使う分だけモーションを確保する
-	CMotion::Motion_Info* pMotionInfo = new CMotion::Motion_Info[nNumMotion];
+	// モーションを生成
+	CLoderText* pLoder = new CLoderText;
 
-	return pMotionInfo;
+	// モーション情報構造体のメモリの確保
+	pLoder->m_aInfo.resize(nNumMotion);
+
+	// ファイルをロードする
+	ifstream File(pFileName);
+	string line;
+	string input;
+
+	int nNumModel = 0;
+
+	D3DXVECTOR3 offset = VEC3_NULL;
+
+	bool bCharacterSet = false;	// キャラクターの設定をしたかどうか
+
+	if (File.is_open() == true)
+	{
+		// 最後の行になるまで読み込む
+		while (getline(File, line))
+		{
+			size_t equal_pos = line.find("="); // =の位置
+
+			// [=] から先を求める
+			input = line.substr(equal_pos + 1);
+
+			// モデルのロード処理
+			if (pLoder->LoadModel(ppModel, nMaxSize, nNumModel, input, line))
+			{
+				if (nNumModel <= nMaxSize - 1)
+				{
+					nNumModel++;
+				}
+			}
+
+			// パーツの設定が終わって無かったら
+			if (bCharacterSet == false)
+			{
+				bCharacterSet = pLoder->LoadCharacterSet(ppModel, line, input);
+			}
+
+			// モーションの設定の読み込み
+			pLoder->LoadMotionSet(pLoder, File, line, nNumMotion);
+
+			// モーションの数が最大まで行ったら
+			if (pLoder->GetNumMotion() >= nNumMotion)
+			{
+				break;
+			}
+		}
+		// ファイルを閉じる
+		File.close();
+	}
+	else
+	{
+		// メモリの破棄
+		if (pLoder != nullptr)
+		{
+			delete pLoder;
+			pLoder = nullptr;
+		}
+
+		// メッセージボックス
+		MessageBox(NULL, pFileName, "ファイルが開けませんでした", MB_OK);
+
+		return nullptr;
+	}
+
+	// モデルの情報の受け渡し
+	*OutNumModel = nNumModel;
+
+	// 情報の受け渡し
+	Info = pLoder->m_aInfo;
+
+	return pLoder;
 }
 
 //===================================================
-// キー情報の生成
+// モデルのロード処理
 //===================================================
-CMotion::Key_Info* CMotionManager::CreateKeyInfo(const int nNumKey)
+bool CLoderText::LoadModel(CModel** ppModel, const int nMaxSize, int nCnt, string input, string line)
 {
-	// 使う分だけキーを確保する
-	CMotion::Key_Info* pKey_Info = new CMotion::Key_Info[nNumKey];
+	if (line.find("MODEL_FILENAME") != string::npos)
+	{
+		// 数値を読み込む準備
+		istringstream value_Input = SetInputvalue(input);
 
-	return pKey_Info;
+		// モデルの名前格納用変数
+		string modelName;
+
+		// 数値を代入する
+		value_Input >> modelName;
+
+		// モデルの名前を代入
+		const char* MODEL_NAME = modelName.c_str();
+
+		// サイズ以上に読み込むとエラーが出るため制限
+		if (nCnt <= nMaxSize - 1)
+		{
+			// モデルの生成
+			ppModel[nCnt] = CModel::Create(MODEL_NAME);
+
+			return true;
+		}
+		else
+		{
+			MessageBox(NULL, MODEL_NAME, "これ以上読み込めません", MB_OK);
+		}
+	}
+	return false;
 }
 
 //===================================================
-// キーの生成
+// キャラクターのロード処理
 //===================================================
-CMotion::Key* CMotionManager::CreateKey(const int nNumModel)
+bool CLoderText::LoadCharacterSet(CModel** ppModel, string line, string input)
 {
-	// 使う分だけキーを確保する
-	CMotion::Key* pKey = new CMotion::Key[nNumModel];
+	static int nIdx = 0;
+	int nNumParts = 0;
+	int nParent = 0;
+	D3DXVECTOR3 offset = VEC3_NULL;
 
-	return pKey;
+	if (line.find("NUM_PARTS") != string::npos)
+	{
+		// 数値を読み込む準備
+		istringstream value_Input = SetInputvalue(input);
+
+		// 数値を代入する
+		value_Input >> nNumParts;
+
+		// パーツの最大数を設定
+		SetNumModel(nNumParts);
+	}
+
+	if (line.find("INDEX") != string::npos)
+	{
+		// 数値を読み込む準備
+		istringstream value_Input = SetInputvalue(input);
+
+		// 数値を代入する
+		value_Input >> nIdx;
+	}
+
+	if (line.find("PARENT") != string::npos)
+	{
+		// 数値を読み込む準備
+		istringstream value_Input = SetInputvalue(input);
+
+		// 数値を代入する
+		value_Input >> nParent;
+
+		if (nParent != -1)
+		{// 親が存在していたら
+			// 親のモデルの設定
+			ppModel[nIdx]->SetParent(ppModel[nParent]);
+		}
+		else
+		{// 親が存在していなかったら
+			ppModel[nIdx]->SetParent(nullptr);
+		}
+	}
+
+	if (line.find("POS") != string::npos)
+	{
+		// 数値を読み込む準備
+		istringstream value_Input = SetInputvalue(input);
+
+		// 数値を代入する
+		value_Input >> offset.x;
+		value_Input >> offset.y;
+		value_Input >> offset.z;
+
+		ppModel[nIdx]->SetOffPos(offset);
+	}
+
+	if (line.find("ROT") != string::npos)
+	{
+		// 数値を読み込む準備
+		istringstream value_Input = SetInputvalue(input);
+
+		// 数値を代入する
+		value_Input >> offset.x;
+		value_Input >> offset.y;
+		value_Input >> offset.z;
+
+		ppModel[nIdx]->SetOffRot(offset);
+	}
+
+	if (line.find("END_CHARACTERSET") != string::npos)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+//===================================================
+// モーションのロード処理
+//===================================================
+void CLoderText::LoadMotionSet(CLoderText* pLoader, ifstream& File, string nowLine, const int nNumMotion)
+{
+	string line, input;
+
+	int loop = 0;
+	int nKey = 0;
+	int nCntModel = 0;
+
+	if (nowLine.find("MOTIONSET") != string::npos)
+	{
+		while (getline(File, line))
+		{
+			int nNum = GetNumMotion();
+
+			size_t equal_pos = line.find("="); // =の位置
+
+			// [=] から先を求める
+			input = line.substr(equal_pos + 1);
+
+			if (line.find("LOOP") != string::npos)
+			{
+				// 数値を読み込む準備
+				istringstream value_Input = SetInputvalue(input);
+
+				// 数値を代入する
+				value_Input >> loop;
+
+				// ループするかどうか
+				m_aInfo[nNum].bLoop = (loop == 1) ? true : false;
+			}
+
+			if (line.find("NUM_KEY") != string::npos)
+			{
+				// = から先を求める
+				input = line.substr(equal_pos + 1);
+				
+				// 数値を読み込む準備
+				istringstream value_Input = SetInputvalue(input);
+				
+				// 数値を代入する
+				value_Input >> m_aInfo[nNum].nNumkey;
+				
+				// キーの総数を代入
+				int nNumKey = m_aInfo[nNum].nNumkey;
+				
+				m_aInfo[nNum].aKeyInfo.resize(nNumKey);
+				
+				// キーのサイズの確保
+				for (int nCntKey = 0; nCntKey < nNumKey; nCntKey++)
+				{
+					m_aInfo[nNum].aKeyInfo[nCntKey].aKey.resize(GetNumModel());
+				}
+			}
+
+			if (line.find("FRAME") != string::npos)
+			{
+				// = から先を求める
+				input = line.substr(equal_pos + 1);
+
+				// 数値を読み込む準備
+				istringstream value_Input = SetInputvalue(input);
+
+				// 数値を代入する
+				value_Input >> m_aInfo[nNum].aKeyInfo[nKey].nFrame;
+			}
+
+			if (line.find("POS") != string::npos)
+			{
+				// = から先を求める
+				input = line.substr(equal_pos + 1);
+
+				// 数値を読み込む準備
+				istringstream value_Input = SetInputvalue(input);
+
+				// 数値を代入する
+				value_Input >> m_aInfo[nNum].aKeyInfo[nKey].aKey[nCntModel].fPosX;
+				value_Input >> m_aInfo[nNum].aKeyInfo[nKey].aKey[nCntModel].fPosY;
+				value_Input >> m_aInfo[nNum].aKeyInfo[nKey].aKey[nCntModel].fPosZ;
+			}
+			if (line.find("ROT") != string::npos)
+			{
+				// = から先を求める
+				input = line.substr(equal_pos + 1);
+
+				// 数値を読み込む準備
+				istringstream value_Input = SetInputvalue(input);
+
+				// 数値を代入する
+				value_Input >> m_aInfo[nNum].aKeyInfo[nKey].aKey[nCntModel].fRotX;
+				value_Input >> m_aInfo[nNum].aKeyInfo[nKey].aKey[nCntModel].fRotY;
+				value_Input >> m_aInfo[nNum].aKeyInfo[nKey].aKey[nCntModel].fRotZ;
+			}
+
+			if (line.find("END_KEY") != string::npos)
+			{
+				nCntModel++;
+
+				nCntModel = Clamp(nCntModel, 0, pLoader->GetNumModel() - 1);
+			}
+
+			if (line.find("END_KEYSET") != string::npos)
+			{
+				nKey++;
+				nCntModel = NULL;
+			}
+			if (line.find("END_MOTIONSET") != string::npos)
+			{
+				nKey = NULL;
+
+				if (nNum <= nNumMotion - 1)
+				{
+					nNum++;
+
+					SetNumMotion(nNum);
+				}
+				else
+				{
+				}
+
+
+				break;
+			}
+		}
+	}
+}
+
+//===================================================
+// inputから数値を取り出処理
+//===================================================
+istringstream CLoderText::SetInputvalue(string input)
+{
+	// 先頭の = を消す
+	input.erase(0, input.find_first_not_of(" = "));
+
+	// inputから数値を取り出す準備
+	istringstream value_Input(input);
+
+	return value_Input;
 }

@@ -16,8 +16,6 @@
 //***************************************************
 #include"main.h"
 #include"character3D.h"
-#include"score.h"
-#include "motion.h"
 
 //***************************************************
 // マクロ定義
@@ -30,6 +28,9 @@
 class CInputKeyboard;
 class CInputJoypad;
 class CModel;
+class CMotion;
+class CShadow;
+class CScoreLerper;
 
 //***************************************************
 // プレイヤークラスの定義
@@ -46,6 +47,7 @@ public:
 		MOTIONTYPE_ACTION,
 		MOTIONTYPE_JUMP,
 		MOTIONTYPE_LANDING,
+		MOTIONTYPE_DASH,
 		MOTIONTYPE_MAX
 	}MOTIONTYPE;
 
@@ -66,10 +68,16 @@ private:
 	CMotion *m_pMotion;				// モーションのクラスへのポインタ
 	CScoreLerper *m_pScore;			// スコアクラスへのポインタ
 	CModel* m_apModel[NUM_PARTS];	// モデルクラスへのポインタ
+	CShadow* m_pShadow;				// 影クラスへのポインタ
 	D3DXVECTOR3 m_move;				// 移動量
 	float m_fSpeed;					// 移動速度
+
+	int m_nParryTime;				// パリィの有効時間
+	int m_nParryCounter;			// パリィ―のカウンター
+
 	int m_nNumModel;				// モデルの最大数
 	bool m_bJump;					// ジャンプできるかどうか
+	bool m_bDash;					// 走ってるかどうか
 };
 
 #endif

@@ -151,12 +151,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Collision.cpp" />
     <ClCompile Include="cylinder.cpp" />
     <ClCompile Include="billboard.cpp" />
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="character2D.cpp" />
     <ClCompile Include="character3D.cpp" />
     <ClCompile Include="dome.cpp" />
+    <ClCompile Include="dust.cpp" />
+    <ClCompile Include="explosion.cpp" />
     <ClCompile Include="impact.cpp" />
     <ClCompile Include="mesh.cpp" />
     <ClCompile Include="meshfield.cpp" />
@@ -186,9 +189,11 @@
     <ClCompile Include="math.cpp" />
     <ClCompile Include="renderer.cpp" />
     <ClCompile Include="score.cpp" />
+    <ClCompile Include="shadow.cpp" />
     <ClCompile Include="sound.cpp" />
     <ClCompile Include="testword.cpp" />
     <ClCompile Include="textureManager.cpp" />
+    <ClCompile Include="transform.cpp" />
     <ClCompile Include="word.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -196,11 +201,14 @@
     <ClInclude Include="camera.h" />
     <ClInclude Include="character2D.h" />
     <ClInclude Include="character3D.h" />
+    <ClInclude Include="Collision.h" />
     <ClInclude Include="cylinder.h" />
     <ClInclude Include="debugproc.h" />
     <ClInclude Include="dome.h" />
+    <ClInclude Include="dust.h" />
     <ClInclude Include="effect.h" />
     <ClInclude Include="enemy.h" />
+    <ClInclude Include="explosion.h" />
     <ClInclude Include="impact.h" />
     <ClInclude Include="input.h" />
     <ClInclude Include="light.h" />
@@ -222,9 +230,11 @@
     <ClInclude Include="math.h" />
     <ClInclude Include="renderer.h" />
     <ClInclude Include="score.h" />
+    <ClInclude Include="shadow.h" />
     <ClInclude Include="sound.h" />
     <ClInclude Include="testword.h" />
     <ClInclude Include="textureManager.h" />
+    <ClInclude Include="transform.h" />
     <ClInclude Include="word.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

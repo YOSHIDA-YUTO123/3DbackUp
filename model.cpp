@@ -28,6 +28,7 @@ CModel::CModel()
 	m_pParent = nullptr;
 	m_nModelIdx = NULL;
 	m_pTextureIdx = nullptr;
+	m_Size = VEC3_NULL;
 }
 
 //===================================================
@@ -76,6 +77,9 @@ HRESULT CModel::Init(const char* pModelName)
 		// ファイル名を使用してテクスチャを読み込む
 		m_pTextureIdx[nCnt] = pTexture->RegisterX(pMat[nCnt].pTextureFilename);
 	}
+
+	// 大きさの取得
+	m_Size = pModel->GetSize(m_nModelIdx);
 
 	return S_OK;
 }
@@ -261,6 +265,14 @@ void CModel::DrawShadow(void)
 
 	// マテリアルをもとに戻す
 	pDevice->SetMaterial(&matDef);
+}
+
+//===================================================
+// モデルのマトリックスの取得
+//===================================================
+D3DXMATRIX CModel::GetModelMatrix(void) const
+{
+	return m_mtxWorld;
 }
 
 //===================================================

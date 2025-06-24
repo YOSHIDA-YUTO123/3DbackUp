@@ -50,7 +50,6 @@ HRESULT CObjectBillboard::Init(void)
 		return E_FAIL;
 	}
 
-
 	return S_OK;
 
 }
@@ -246,6 +245,27 @@ void CObjectBillboard::UpdateVertexPos(const D3DXVECTOR3 pos)
 }
 
 //===================================================
+// テクスチャ座標の設定
+//===================================================
+void CObjectBillboard::SetTextureVtx(const D3DXVECTOR2 tex,const D3DXVECTOR2 offtex)
+{
+	// 頂点情報のポインタ
+	VERTEX_3D* pVtx;
+
+	// 頂点バッファのロック
+	m_pVtxBuffer->Lock(0, 0, (void**)&pVtx, 0);
+
+	// テクスチャ座標の設定
+	pVtx[0].tex = D3DXVECTOR2(offtex.x, offtex.y);
+	pVtx[1].tex = D3DXVECTOR2(offtex.x + tex.x, offtex.y);
+	pVtx[2].tex = D3DXVECTOR2(offtex.x, offtex.y + tex.y);
+	pVtx[3].tex = D3DXVECTOR2(offtex.x + tex.x, offtex.y + tex.y);
+
+	// 頂点バッファのアンロック
+	m_pVtxBuffer->Unlock();
+}
+
+//===================================================
 // 生成処理
 //===================================================
 CObjectBillboard* CObjectBillboard::Create(const D3DXVECTOR3 pos, const D3DXVECTOR3 size, const char* pTextureName)
@@ -281,4 +301,104 @@ CObjectBillboard* CObjectBillboard::Create(const D3DXVECTOR3 pos, const D3DXVECT
 	pBillboard->SetOffsetVtx();
 	pBillboard->SetTextureID(pTextureName);
 	return pBillboard;
+}
+
+//===================================================
+// コンストラクタ
+//===================================================
+CBillboardAnimation::CBillboardAnimation(int nPriority) : CObjectBillboard(nPriority)
+{
+	m_fPosTexH = NULL;
+	m_fPosTexU = NULL;
+	m_nAnimSpeed = NULL;
+	m_nCounterAnim = NULL;
+	m_nPatternAnim = NULL;
+	m_nU = NULL;
+	m_nV = NULL;
+}
+
+//===================================================
+// デストラクタ
+//===================================================
+CBillboardAnimation::~CBillboardAnimation()
+{
+}
+
+//===================================================
+// アニメーションの設定処理
+//===================================================
+void CBillboardAnimation::SetAnim(const int nAnimSpeed, const int U, const int V)
+{
+	m_nAnimSpeed = nAnimSpeed;
+	m_nU = U;
+	m_nV = V;
+}
+
+//===================================================
+// 初期化処理
+//===================================================
+HRESULT CBillboardAnimation::Init(void)
+{
+	// 初期化処理
+	if (FAILED(CObjectBillboard::Init()))
+	{
+		return E_FAIL;
+	}
+
+	return S_OK;
+}
+
+//===================================================
+// 終了処理
+//===================================================
+void CBillboardAnimation::Uninit(void)
+{
+	// ビルボードの破棄
+	CObjectBillboard::Uninit();
+}
+
+//===================================================
+// 更新処理
+//===================================================
+void CBillboardAnimation::Update(void)
+{
+	// ビルボードの更新
+	CObjectBillboard::Update();
+
+	// アニメーションのカウンターを進める
+	m_nCounterAnim++;
+
+	m_fPosTexU = 1.0f / m_nU;
+	m_fPosTexH = 1.0f / m_nV;
+
+	if (m_nCounterAnim >= m_nAnimSpeed)
+	{
+		m_nCounterAnim = 0;
+
+		m_nPatternAnim++;
+
+		// Y座標の割合
+		int nRatePosY = m_nPatternAnim / m_nU;
+
+		float UV = m_fPosTexU * m_nPatternAnim;
+		float HV = nRatePosY * m_fPosTexH;
+
+		// テクスチャ座標の更新
+		CObjectBillboard::SetTextureVtx(D3DXVECTOR2(m_fPosTexU, m_fPosTexH), D3DXVECTOR2(UV, HV));
+
+		// 最大まで行ったら
+		if (m_nPatternAnim >= (m_nU * m_nV))
+		{
+			Uninit();
+		}
+	}
+}
+
+//===================================================
+// 描画処理
+//===================================================
+void CBillboardAnimation::Draw(void)
+{
+	// ビルボードの描画
+	CObjectBillboard::Draw();
 }
